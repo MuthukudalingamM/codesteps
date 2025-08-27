@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Bug, AlertTriangle, CheckCircle, Lightbulb } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Bug, AlertTriangle, CheckCircle, Lightbulb, Copy } from "lucide-react";
 
 const sampleErrors = [
   {
@@ -47,17 +48,47 @@ export default function ErrorSolver() {
   const [customError, setCustomError] = useState("");
   const [customCode, setCustomCode] = useState("");
   const [explanation, setExplanation] = useState<any>(null);
+  const { toast } = useToast();
+
+  const copyToClipboard = async (text: string, type: string = "content") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: `${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard.`
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy to clipboard.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const explainMutation = useMutation({
     mutationFn: async (error: any) => {
-      const response = await apiRequest("POST", "/api/ai/explain-error", {
-        error: error.error,
-        code: error.code
+      const response = await apiRequest("/api/ai/explain-error", {
+        method: "POST",
+        body: JSON.stringify({
+          error: error.error,
+          code: error.code,
+          context: error.context || "General debugging",
+          userLevel: 'beginner', // Could be dynamic based on user data
+          userId: 'current-user'
+        }),
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       setExplanation(data);
+    },
+    onError: (error) => {
+      toast({
+        title: "Analysis Failed",
+        description: "I'm having trouble analyzing this error. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -139,31 +170,89 @@ export default function ErrorSolver() {
           {explanation && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-accent" />
-                  <span>AI Solution</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-accent" />
+                    <span>AI Error Analysis</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(JSON.stringify(explanation, null, 2), "analysis")}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Analysis
+                  </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <h4 className="font-medium text-foreground mb-2">What this error means:</h4>
-                  <p className="text-sm text-muted-foreground">{explanation.explanation}</p>
+                  <h4 className="font-medium text-foreground mb-2 flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <span>What this error means:</span>
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{explanation.explanation}</p>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-foreground mb-2">Why it occurred:</h4>
-                  <p className="text-sm text-muted-foreground">{explanation.cause}</p>
+                  <h4 className="font-medium text-foreground mb-2 flex items-center space-x-2">
+                    <Bug className="h-4 w-4 text-orange-500" />
+                    <span>Root cause:</span>
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{explanation.cause}</p>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-foreground mb-2">How to fix it:</h4>
-                  <p className="text-sm text-muted-foreground">{explanation.solution}</p>
+                  <h4 className="font-medium text-foreground mb-2 flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-accent" />
+                    <span>How to fix it:</span>
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{explanation.solution}</p>
+
+                  {explanation.correctedCode && (
+                    <div className="bg-secondary rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-foreground text-sm">Corrected Code:</h5>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(explanation.correctedCode, "corrected code")}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                      <pre className="text-xs font-mono text-foreground overflow-x-auto bg-background p-3 rounded border">
+                        <code>{explanation.correctedCode}</code>
+                      </pre>
+                    </div>
+                  )}
                 </div>
-                
-                <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
-                  <h4 className="font-medium text-accent mb-2">Prevention Tips:</h4>
-                  <p className="text-sm text-muted-foreground">{explanation.tips}</p>
+
+                <div className="p-4 bg-accent/5 border border-accent/20 rounded-lg">
+                  <h4 className="font-medium text-accent mb-2 flex items-center space-x-2">
+                    <Lightbulb className="h-4 w-4" />
+                    <span>Prevention Tips:</span>
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{explanation.tips}</p>
                 </div>
+
+                {explanation.relatedConcepts && explanation.relatedConcepts.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-foreground mb-2">Related Concepts to Learn:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {explanation.relatedConcepts.map((concept: string, index: number) => (
+                        <Badge key={index} variant="secondary">{concept}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {explanation.encouragement && (
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <p className="text-sm text-primary font-medium text-center">{explanation.encouragement}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
