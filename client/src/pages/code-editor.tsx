@@ -117,7 +117,17 @@ export default function CodeEditor() {
           {results.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Test Results</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Test Results</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(JSON.stringify(results, null, 2), "test results")}
+                  >
+                    {copiedOutput ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                    {copiedOutput ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
