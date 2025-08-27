@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import Dashboard from "@/pages/dashboard";
+import Course from "@/pages/course";
 import AiTutor from "@/pages/ai-tutor";
 import CodeEditor from "@/pages/code-editor";
 import ErrorSolver from "@/pages/error-solver";
@@ -34,6 +35,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
+      <Route path="/course" component={() => <Layout><Course /></Layout>} />
       <Route path="/ai-tutor" component={() => <Layout><AiTutor /></Layout>} />
       <Route path="/code-editor" component={() => <Layout><CodeEditor /></Layout>} />
       <Route path="/error-solver" component={() => <Layout><ErrorSolver /></Layout>} />

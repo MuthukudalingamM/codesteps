@@ -9,11 +9,13 @@ import {
   Users, 
   User, 
   Settings, 
-  HelpCircle 
+  HelpCircle,
+  BookOpen
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
+  { name: "Course", href: "/course", icon: BookOpen },
   { name: "AI Tutor", href: "/ai-tutor", icon: Brain },
   { name: "Code Editor", href: "/code-editor", icon: Code },
   { name: "Error Solver", href: "/error-solver", icon: Bug },
