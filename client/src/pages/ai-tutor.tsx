@@ -65,16 +65,26 @@ export default function AiTutor() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      return await apiRequest("/api/ai/chat", {
+      // Prepare enhanced context
+      const contextData = {
+        message: content,
+        context: selectedLesson ? {
+          lessonId: selectedLesson,
+          lessonTitle: currentLesson?.title,
+          difficulty: currentLesson?.difficulty,
+          suggestedTopics: currentLesson?.relatedTopics || []
+        } : "General programming help",
+        conversationHistory: messages.slice(-6), // Last 3 exchanges
+        currentCode: codeToRun || null,
+        learningLevel: userProgress?.level || 'beginner',
+        userId: 'current-user' // Replace with actual user ID from auth
+      };
+
+      const response = await apiRequest("/api/ai/chat", {
         method: "POST",
-        body: JSON.stringify({
-          message: content,
-          context: selectedLesson ? {
-            lessonId: selectedLesson,
-            lessonTitle: currentLesson?.title
-          } : undefined
-        }),
+        body: JSON.stringify(contextData),
       });
+      return response;
     },
     onSuccess: (response) => {
       const aiMessage: Message = {
@@ -85,12 +95,18 @@ export default function AiTutor() {
       };
       setMessages(prev => [...prev, aiMessage]);
       setIsTyping(false);
+
+      // Handle additional AI suggestions if provided
+      if (response.suggestions) {
+        // Could show follow-up suggestions in UI
+        console.log('AI Suggestions:', response.suggestions);
+      }
     },
     onError: (error) => {
       setIsTyping(false);
       toast({
-        title: "AI Error",
-        description: "Failed to get AI response. Please try again.",
+        title: "AI Assistant Unavailable",
+        description: "I'm having trouble connecting. Please try again in a moment.",
         variant: "destructive"
       });
     }
@@ -100,7 +116,11 @@ export default function AiTutor() {
     mutationFn: async (code: string) => {
       return await apiRequest("/api/code/execute", {
         method: "POST",
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({
+          code,
+          context: selectedLesson ? currentLesson?.title : 'Practice Code',
+          userId: 'current-user'
+        }),
       });
     },
     onSuccess: (response) => {
@@ -110,11 +130,25 @@ export default function AiTutor() {
         executionTime: response.executionTime || 0
       });
       setIsExecuting(false);
+
+      // Auto-generate AI feedback if there was an error
+      if (response.error && codeToRun.trim()) {
+        const errorMessage = `I got this error while running my code: ${response.error}. Can you help me understand what went wrong?`;
+        const userMessage: Message = {
+          id: Date.now().toString(),
+          type: 'user',
+          content: errorMessage,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMessage]);
+        setIsTyping(true);
+        sendMessageMutation.mutate(errorMessage);
+      }
     },
     onError: (error) => {
       setExecutionResult({
         output: "",
-        error: "Failed to execute code. Please check your syntax.",
+        error: "Failed to execute code. Please check your syntax and try again.",
         executionTime: 0
       });
       setIsExecuting(false);
@@ -171,6 +205,20 @@ export default function AiTutor() {
       title: "Code Copied",
       description: "Code has been copied to the code editor."
     });
+
+    // Automatically ask AI for explanation of the copied code
+    setTimeout(() => {
+      const explanationMessage = `I just copied this code to my editor. Can you explain how it works and what I should focus on learning?`;
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: explanationMessage,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, userMessage]);
+      setIsTyping(true);
+      sendMessageMutation.mutate(explanationMessage);
+    }, 1000);
   };
 
   const copyToClipboard = async (text: string) => {
