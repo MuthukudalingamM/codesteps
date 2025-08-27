@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  BookOpen, 
-  Brain, 
-  Trophy, 
+import { AnimatedLesson, sampleAnimatedLessons } from "@/components/ui/animated-lesson";
+import {
+  BookOpen,
+  Brain,
+  Trophy,
   Star,
   Clock,
   CheckCircle,
@@ -18,13 +19,19 @@ import {
   Users,
   Code,
   Zap,
-  Target
+  Target,
+  Sparkles,
+  Play
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Course() {
   const [, setLocation] = useLocation();
   const [selectedLevel, setSelectedLevel] = useState("beginner");
+  const [showAnimatedLessons, setShowAnimatedLessons] = useState(false);
+  const [currentAnimatedLesson, setCurrentAnimatedLesson] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: lessons, isLoading } = useQuery({
     queryKey: ["/api/lessons"],
@@ -81,6 +88,22 @@ export default function Course() {
 
   const continueCourse = () => {
     setLocation('/ai-tutor');
+  };
+
+  const startAnimatedLesson = (lessonType: string) => {
+    setCurrentAnimatedLesson(lessonType);
+    toast({
+      title: "Interactive Lesson Started! 🎬",
+      description: "Watch the concept come to life with animations."
+    });
+  };
+
+  const completeAnimatedLesson = () => {
+    toast({
+      title: "Lesson Completed! 🎉",
+      description: "Great job! You've mastered this concept."
+    });
+    setCurrentAnimatedLesson(null);
   };
 
   if (isLoading) {
@@ -166,8 +189,8 @@ export default function Course() {
 
       {/* Course Actions */}
       <div className="flex items-center justify-center space-x-4 py-6">
-        <Button 
-          size="lg" 
+        <Button
+          size="lg"
           onClick={startCourse}
           className="px-8"
           data-testid="start-course"
@@ -175,15 +198,102 @@ export default function Course() {
           <PlayCircle className="h-5 w-5 mr-2" />
           Start Course
         </Button>
-        <Button 
-          variant="outline" 
-          size="lg" 
+        <Button
+          variant="outline"
+          size="lg"
           onClick={continueCourse}
           data-testid="continue-course"
         >
           Continue Learning
         </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={() => setShowAnimatedLessons(!showAnimatedLessons)}
+          className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-300"
+        >
+          <Sparkles className="h-5 w-5 mr-2" />
+          {showAnimatedLessons ? 'Hide' : 'Show'} Interactive Lessons
+        </Button>
       </div>
+
+      {/* Animated Lesson Viewer */}
+      {showAnimatedLessons && currentAnimatedLesson && (
+        <div className="mb-8">
+          <div className="mb-6 flex items-center justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentAnimatedLesson(null)}
+            >
+              ← Back to Interactive Lessons
+            </Button>
+            <Badge variant="secondary" className="flex items-center space-x-1">
+              <Sparkles className="h-3 w-3" />
+              <span>Interactive Mode</span>
+            </Badge>
+          </div>
+
+          <AnimatedLesson
+            {...sampleAnimatedLessons[currentAnimatedLesson as keyof typeof sampleAnimatedLessons]}
+            onComplete={completeAnimatedLesson}
+          />
+        </div>
+      )}
+
+      {/* Interactive Lessons Grid */}
+      {showAnimatedLessons && !currentAnimatedLesson && (
+        <div className="mb-8 space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Interactive Programming Concepts
+            </h2>
+            <p className="text-muted-foreground">Learn through animated, visual explanations</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Object.entries(sampleAnimatedLessons).map(([key, lesson]) => (
+              <Card key={key} className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50 group">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Zap className="h-6 w-6 text-primary group-hover:text-purple-500 transition-colors" />
+                      <CardTitle className="text-lg">{lesson.title}</CardTitle>
+                    </div>
+                    <Badge variant="secondary">
+                      {lesson.steps.length} steps
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{lesson.concept}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>~{lesson.steps.reduce((acc, step) => acc + step.duration, 0)} minutes</span>
+                    </div>
+
+                    <Button
+                      onClick={() => startAnimatedLesson(key)}
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Start Interactive Lesson
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+            <Sparkles className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+            <h3 className="font-semibold mb-2">More Interactive Lessons Coming Soon!</h3>
+            <p className="text-sm text-muted-foreground">
+              We're constantly adding new animated lessons to help you visualize programming concepts.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Detailed Level Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
