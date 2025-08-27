@@ -13,6 +13,161 @@ const openai = new OpenAI({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.use('/api/auth', authRoutes);
+
+  // Basic auth endpoints for demo
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password, method } = req.body;
+
+      // Demo login - accept any email/password combo
+      if (email && password && password.length >= 6) {
+        const user = {
+          id: '1',
+          username: email.split('@')[0],
+          email: email,
+          phone: '+1234567890',
+          skillLevel: 'intermediate',
+          currentStreak: 7,
+          totalLessons: 50,
+          completedLessons: 24,
+          challengesSolved: 18
+        };
+
+        const token = 'demo-token-' + Date.now();
+
+        res.json({
+          success: true,
+          token: token,
+          user: user
+        });
+      } else {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid email or password'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Login error'
+      });
+    }
+  });
+
+  app.post('/api/auth/phone-login', async (req, res) => {
+    try {
+      const { phone, password } = req.body;
+
+      // Demo phone login - accept any phone/password combo
+      if (phone && password && password.length >= 6) {
+        const user = {
+          id: '1',
+          username: 'phoneuser',
+          email: 'user@example.com',
+          phone: phone,
+          skillLevel: 'intermediate',
+          currentStreak: 7,
+          totalLessons: 50,
+          completedLessons: 24,
+          challengesSolved: 18
+        };
+
+        const token = 'demo-token-' + Date.now();
+
+        res.json({
+          success: true,
+          token: token,
+          user: user,
+          requiresOTP: false // For demo, skip OTP
+        });
+      } else {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid phone number or password'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Phone login error'
+      });
+    }
+  });
+
+  app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+      const { phone, otp } = req.body;
+
+      // Demo OTP verification - accept any 6-digit code
+      if (otp && otp.length === 6) {
+        const user = {
+          id: '1',
+          username: 'phoneuser',
+          email: 'user@example.com',
+          phone: phone,
+          skillLevel: 'intermediate',
+          currentStreak: 7,
+          totalLessons: 50,
+          completedLessons: 24,
+          challengesSolved: 18
+        };
+
+        const token = 'demo-token-' + Date.now();
+
+        res.json({
+          success: true,
+          token: token,
+          user: user
+        });
+      } else {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid OTP code'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'OTP verification error'
+      });
+    }
+  });
+
+  app.get('/api/auth/verify', async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+
+      // Demo token verification - accept any token that starts with 'demo-token'
+      if (token && token.startsWith('demo-token')) {
+        const user = {
+          id: '1',
+          username: 'demouser',
+          email: 'demo@example.com',
+          phone: '+1234567890',
+          skillLevel: 'intermediate',
+          currentStreak: 7,
+          totalLessons: 50,
+          completedLessons: 24,
+          challengesSolved: 18
+        };
+
+        res.json({
+          success: true,
+          user: user
+        });
+      } else {
+        res.status(401).json({
+          success: false,
+          message: 'Invalid token'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Token verification error'
+      });
+    }
+  });
   // User routes
   app.get("/api/users/:id", async (req, res) => {
     try {
