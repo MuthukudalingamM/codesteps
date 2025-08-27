@@ -6,7 +6,8 @@ import { CodeEditor as CodeEditorComponent } from "@/components/ui/code-editor";
 import { AiChat } from "@/components/ui/ai-chat";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Code, Play, Lightbulb, CheckCircle, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Code, Play, Lightbulb, CheckCircle, XCircle, Copy, Check } from "lucide-react";
 
 const initialCode = `// Write a function to calculate the area of a circle
 function calculateArea(radius) {
@@ -27,6 +28,28 @@ export default function CodeEditor() {
   const [code, setCode] = useState(initialCode);
   const [results, setResults] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any>(null);
+  const [copiedOutput, setCopiedOutput] = useState(false);
+  const { toast } = useToast();
+
+  const copyToClipboard = async (text: string, type: string = "content") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (type === "output") {
+        setCopiedOutput(true);
+        setTimeout(() => setCopiedOutput(false), 2000);
+      }
+      toast({
+        title: "Copied!",
+        description: `${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard.`
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy to clipboard.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const executeMutation = useMutation({
     mutationFn: async () => {
@@ -139,9 +162,19 @@ export default function CodeEditor() {
           {suggestions && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Lightbulb className="h-5 w-5 text-accent" />
-                  <span>AI Code Suggestions</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Lightbulb className="h-5 w-5 text-accent" />
+                    <span>AI Code Suggestions</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(JSON.stringify(suggestions, null, 2), "suggestions")}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -149,7 +182,7 @@ export default function CodeEditor() {
                   <h4 className="font-medium text-foreground mb-2">Feedback</h4>
                   <p className="text-sm text-muted-foreground">{suggestions.feedback}</p>
                 </div>
-                
+
                 {suggestions.suggestions && suggestions.suggestions.length > 0 && (
                   <div>
                     <h4 className="font-medium text-foreground mb-2">Suggestions</h4>
@@ -163,7 +196,7 @@ export default function CodeEditor() {
                     </ul>
                   </div>
                 )}
-                
+
                 {suggestions.encouragement && (
                   <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
                     <p className="text-sm text-accent font-medium">{suggestions.encouragement}</p>
