@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import Dashboard from "@/pages/dashboard";
@@ -34,17 +36,73 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show login page by default if not authenticated
+  if (!isLoading && !isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/" component={Login} />
+        <Route path="/login" component={Login} />
+        <Route path="/signup" component={Signup} />
+        <Route component={Login} />
+      </Switch>
+    );
+  }
+
+  // Show protected routes if authenticated
   return (
     <Switch>
-      <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
-      <Route path="/course" component={() => <Layout><Course /></Layout>} />
-      <Route path="/ai-tutor" component={() => <Layout><AiTutor /></Layout>} />
-      <Route path="/code-editor" component={() => <Layout><CodeEditor /></Layout>} />
-      <Route path="/error-solver" component={() => <Layout><ErrorSolver /></Layout>} />
-      <Route path="/challenges" component={() => <Layout><Challenges /></Layout>} />
-      <Route path="/community" component={() => <Layout><Community /></Layout>} />
-      <Route path="/profile" component={() => <Layout><Profile /></Layout>} />
-      <Route path="/settings" component={() => <Layout><Settings /></Layout>} />
+      <Route path="/" component={() => (
+        <ProtectedRoute>
+          <Layout><Dashboard /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/dashboard" component={() => (
+        <ProtectedRoute>
+          <Layout><Dashboard /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/course" component={() => (
+        <ProtectedRoute>
+          <Layout><Course /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/ai-tutor" component={() => (
+        <ProtectedRoute>
+          <Layout><AiTutor /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/code-editor" component={() => (
+        <ProtectedRoute>
+          <Layout><CodeEditor /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/error-solver" component={() => (
+        <ProtectedRoute>
+          <Layout><ErrorSolver /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/challenges" component={() => (
+        <ProtectedRoute>
+          <Layout><Challenges /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/community" component={() => (
+        <ProtectedRoute>
+          <Layout><Community /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/profile" component={() => (
+        <ProtectedRoute>
+          <Layout><Profile /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/settings" component={() => (
+        <ProtectedRoute>
+          <Layout><Settings /></Layout>
+        </ProtectedRoute>
+      )} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route component={NotFound} />
@@ -57,8 +115,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <Toaster />
-          <Router />
+          <AuthProvider>
+            <Toaster />
+            <Router />
+          </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
