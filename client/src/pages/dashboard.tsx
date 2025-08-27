@@ -19,6 +19,7 @@ import {
   Lock
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 const sampleCode = `// TODO: Implement your function here
 function calculateArea(radius) {
@@ -28,6 +29,7 @@ function calculateArea(radius) {
 
 export default function Dashboard() {
   const [code, setCode] = useState(sampleCode);
+  const [, setLocation] = useLocation();
 
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
     queryKey: ["/api/lessons"],
@@ -131,7 +133,10 @@ export default function Dashboard() {
                       </div>
                       <span className="text-sm text-muted-foreground">60% complete</span>
                     </div>
-                    <Button data-testid="continue-lesson">
+                    <Button 
+                      data-testid="continue-lesson"
+                      onClick={() => setLocation('/ai-tutor')}
+                    >
                       Continue Lesson
                     </Button>
                   </div>
@@ -198,7 +203,11 @@ export default function Dashboard() {
               <p className="text-sm text-muted-foreground mb-4">
                 Find the second largest number in an array without sorting.
               </p>
-              <Button className="w-full" data-testid="start-challenge">
+              <Button 
+                className="w-full" 
+                data-testid="start-challenge"
+                onClick={() => setLocation('/challenges')}
+              >
                 Start Challenge
               </Button>
             </CardContent>
