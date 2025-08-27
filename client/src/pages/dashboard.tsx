@@ -6,20 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AiChat } from "@/components/ui/ai-chat";
 import { CodeEditor } from "@/components/ui/code-editor";
-import { 
-  Flame, 
-  Book, 
-  Trophy, 
-  Star, 
-  Brain, 
-  Play, 
+import { LessonReminder, useLessonReminders } from "@/components/ui/lesson-reminder";
+import {
+  Flame,
+  Book,
+  Trophy,
+  Star,
+  Brain,
+  Play,
   Lightbulb,
   CheckCircle,
   Circle,
-  Lock
+  Lock,
+  Bell,
+  Settings
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 const sampleCode = `// TODO: Implement your function here
 function calculateArea(radius) {
@@ -30,6 +34,30 @@ function calculateArea(radius) {
 export default function Dashboard() {
   const [code, setCode] = useState(sampleCode);
   const [, setLocation] = useLocation();
+  const [showReminders, setShowReminders] = useState(true);
+  const { toast } = useToast();
+  const {
+    reminderSettings,
+    updateReminderSettings,
+    requestNotificationPermission
+  } = useLessonReminders();
+
+  useEffect(() => {
+    // Check if user wants browser notifications
+    const checkNotifications = async () => {
+      if ('Notification' in window && Notification.permission === 'default') {
+        const granted = await requestNotificationPermission();
+        if (granted) {
+          toast({
+            title: "Notifications Enabled! 🔔",
+            description: "You'll receive helpful learning reminders."
+          });
+        }
+      }
+    };
+
+    checkNotifications();
+  }, []);
 
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
     queryKey: ["/api/lessons"],
@@ -73,6 +101,42 @@ export default function Dashboard() {
           variant="primary"
         />
       </div>
+
+      {/* Lesson Reminders */}
+      {showReminders && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Bell className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Learning Reminders</h2>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReminders(false)}
+                className="text-muted-foreground"
+              >
+                Hide
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation('/settings')}
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                Settings
+              </Button>
+            </div>
+          </div>
+
+          <LessonReminder
+            userId="current-user"
+            currentProgress={lessons}
+            lastActive={new Date(Date.now() - (Math.random() * 7 * 24 * 60 * 60 * 1000))} // Random last active for demo
+          />
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
