@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Code, ArrowLeft, Mail, Phone, Shield } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const emailLoginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -33,11 +33,11 @@ type OTPForm = z.infer<typeof otpSchema>;
 export default function Login() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<string | null>(null);
   const { toast } = useToast();
+  const { login, loginWithPhone, verifyOTP, isLoading } = useAuth();
 
   const {
     register: registerEmail,
@@ -64,109 +64,65 @@ export default function Login() {
   });
 
   const onEmailSubmit = async (data: EmailLoginForm) => {
-    setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ ...data, method: 'email' }),
-      });
-
-      if (response.success) {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        });
-        localStorage.setItem("authToken", response.token);
-        setLocation("/");
-      } else {
-        toast({
-          title: "Login failed",
-          description: response.message || "Invalid email or password",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      await login(data.email, data.password);
       toast({
-        title: "Error",
-        description: "An error occurred during login. Please try again.",
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+      setLocation("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const onPhoneSubmit = async (data: PhoneLoginForm) => {
-    setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/phone-login", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-
-      if (response.success) {
-        if (response.requiresOTP) {
-          setShowOtpVerification(true);
-          setPendingVerification(data.phone);
-          toast({
-            title: "OTP Sent",
-            description: "Please check your phone for the verification code.",
-          });
-        } else {
-          localStorage.setItem("authToken", response.token);
-          setLocation("/");
-        }
-      } else {
+      const success = await loginWithPhone(data.phone, data.password);
+      if (success) {
         toast({
-          title: "Login failed",
-          description: response.message || "Invalid phone number or password",
-          variant: "destructive",
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+        setLocation("/dashboard");
+      } else {
+        // OTP verification required
+        setShowOtpVerification(true);
+        setPendingVerification(data.phone);
+        toast({
+          title: "OTP Sent",
+          description: "Please check your phone for the verification code.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An error occurred during login. Please try again.",
+        title: "Login failed",
+        description: error.message || "Invalid phone number or password",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const onOtpSubmit = async (data: OTPForm) => {
-    setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/verify-otp", {
-        method: "POST",
-        body: JSON.stringify({
-          phone: pendingVerification,
-          otp: data.otp
-        }),
-      });
+      if (!pendingVerification) return;
 
-      if (response.success) {
-        toast({
-          title: "Welcome back!",
-          description: "Phone verification successful.",
-        });
-        localStorage.setItem("authToken", response.token);
-        setLocation("/");
-      } else {
-        toast({
-          title: "Verification failed",
-          description: response.message || "Invalid OTP code",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      await verifyOTP(pendingVerification, data.otp);
       toast({
-        title: "Error",
-        description: "An error occurred during verification. Please try again.",
+        title: "Welcome back!",
+        description: "Phone verification successful.",
+      });
+      setLocation("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Verification failed",
+        description: error.message || "Invalid OTP code",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
