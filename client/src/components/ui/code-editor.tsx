@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, RotateCcw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Play, RotateCcw, Copy, Check } from "lucide-react";
 
 interface CodeEditorProps {
   value: string;
@@ -12,6 +13,7 @@ interface CodeEditorProps {
   onRun?: () => void;
   onReset?: () => void;
   readOnly?: boolean;
+  showCopyButton?: boolean;
 }
 
 export function CodeEditor({
@@ -22,9 +24,30 @@ export function CodeEditor({
   title = "Code Editor",
   onRun,
   onReset,
-  readOnly = false
+  readOnly = false,
+  showCopyButton = true
 }: CodeEditorProps) {
   const editorRef = useRef<HTMLTextAreaElement>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({
+        title: "Code Copied",
+        description: "Code has been copied to clipboard."
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy code to clipboard.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Simple code editor implementation
   // In a real application, you would integrate Monaco Editor here
@@ -34,10 +57,21 @@ export function CodeEditor({
         <div className="flex items-center justify-between">
           <CardTitle>{title}</CardTitle>
           <div className="flex items-center space-x-2">
+            {showCopyButton && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyCode}
+                data-testid="copy-code"
+              >
+                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                {copied ? "Copied!" : "Copy"}
+              </Button>
+            )}
             {onReset && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={onReset}
                 data-testid="code-reset"
               >
@@ -46,8 +80,8 @@ export function CodeEditor({
               </Button>
             )}
             {onRun && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={onRun}
                 className="bg-accent hover:bg-accent/90"
                 data-testid="code-run"
