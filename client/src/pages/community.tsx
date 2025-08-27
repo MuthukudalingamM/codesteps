@@ -210,6 +210,12 @@ export default function Community() {
                           <button 
                             className="flex items-center space-x-2 text-muted-foreground hover:text-accent transition-colors"
                             data-testid={`like-post-${post.id}`}
+                            onClick={() => {
+                              toast({
+                                title: "Post liked!",
+                                description: "You liked this post.",
+                              });
+                            }}
                           >
                             <ThumbsUp className="h-4 w-4" />
                             <span className="text-sm">{post.likes}</span>
@@ -217,6 +223,12 @@ export default function Community() {
                           <button 
                             className="flex items-center space-x-2 text-muted-foreground hover:text-primary transition-colors"
                             data-testid={`reply-post-${post.id}`}
+                            onClick={() => {
+                              toast({
+                                title: "Reply feature",
+                                description: "Reply functionality coming soon!",
+                              });
+                            }}
                           >
                             <Reply className="h-4 w-4" />
                             <span className="text-sm">{post.replies}</span>

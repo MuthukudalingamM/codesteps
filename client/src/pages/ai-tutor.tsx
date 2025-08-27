@@ -73,7 +73,15 @@ export default function AiTutor() {
                   <div className="bg-secondary rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-medium text-foreground">Code Example</h4>
-                      <Button size="sm" variant="outline" data-testid="run-example">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        data-testid="run-example"
+                        onClick={() => {
+                          console.log("Running code example:", currentLesson.codeExample);
+                          // In a real app, this would execute the code in a sandbox
+                        }}
+                      >
                         <Play className="h-4 w-4 mr-2" />
                         Run Example
                       </Button>
