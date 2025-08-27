@@ -170,7 +170,7 @@ export default function Community() {
 
           {/* Community Posts */}
           <div className="space-y-4">
-            {posts?.length === 0 ? (
+            {(posts as any[])?.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -179,7 +179,7 @@ export default function Community() {
                 </CardContent>
               </Card>
             ) : (
-              posts?.map((post: any) => (
+              (posts as any[])?.map((post: any) => (
                 <Card key={post.id} className="hover:shadow-sm transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">

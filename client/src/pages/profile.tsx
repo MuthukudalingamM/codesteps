@@ -331,7 +331,7 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {lessons?.map((lesson: any, index: number) => (
+                    {(lessons as any[])?.map((lesson: any, index: number) => (
                       <div key={lesson.id} className="flex items-center space-x-4 p-3 rounded-lg border">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           index < currentUser.completedLessons 

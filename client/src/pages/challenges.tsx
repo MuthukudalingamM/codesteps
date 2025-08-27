@@ -16,8 +16,8 @@ export default function Challenges() {
   });
 
   const selectedChallengeData = selectedChallenge 
-    ? challenges?.find((c: any) => c.id === selectedChallenge)
-    : challenges?.[0];
+    ? (challenges as any[])?.find((c: any) => c.id === selectedChallenge)
+    : (challenges as any[])?.[0];
 
   const handleSelectChallenge = (challengeId: string) => {
     setSelectedChallenge(challengeId);
@@ -214,12 +214,12 @@ export default function Challenges() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {challenges?.map((challenge: any) => (
+                {(challenges as any[])?.map((challenge: any) => (
                   <button
                     key={challenge.id}
                     onClick={() => handleSelectChallenge(challenge.id)}
                     className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                      selectedChallenge === challenge.id || (!selectedChallenge && challenge.id === challenges[0]?.id)
+                      selectedChallenge === challenge.id || (!selectedChallenge && challenge.id === (challenges as any[])?.[0]?.id)
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card hover:bg-muted border-border"
                     }`}
