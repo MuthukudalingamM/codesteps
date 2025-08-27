@@ -6,38 +6,69 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Code, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Code, ArrowLeft, Mail, Phone, Shield } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/api";
 
-const loginSchema = z.object({
+const emailLoginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
+const phoneLoginSchema = z.object({
+  phone: z.string().min(10, "Phone number must be at least 10 digits").regex(/^[\d\s\+\-\(\)]+$/, "Invalid phone number format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const otpSchema = z.object({
+  otp: z.string().length(6, "OTP must be 6 digits"),
+});
+
+type EmailLoginForm = z.infer<typeof emailLoginSchema>;
+type PhoneLoginForm = z.infer<typeof phoneLoginSchema>;
+type OTPForm = z.infer<typeof otpSchema>;
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState<string | null>(null);
   const { toast } = useToast();
 
   const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+    register: registerEmail,
+    handleSubmit: handleEmailSubmit,
+    formState: { errors: emailErrors },
+  } = useForm<EmailLoginForm>({
+    resolver: zodResolver(emailLoginSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
+  const {
+    register: registerPhone,
+    handleSubmit: handlePhoneSubmit,
+    formState: { errors: phoneErrors },
+  } = useForm<PhoneLoginForm>({
+    resolver: zodResolver(phoneLoginSchema),
+  });
+
+  const {
+    register: registerOtp,
+    handleSubmit: handleOtpSubmit,
+    formState: { errors: otpErrors },
+  } = useForm<OTPForm>({
+    resolver: zodResolver(otpSchema),
+  });
+
+  const onEmailSubmit = async (data: EmailLoginForm) => {
     setIsLoading(true);
     try {
       const response = await apiRequest("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, method: 'email' }),
       });
 
       if (response.success) {
@@ -58,6 +89,80 @@ export default function Login() {
       toast({
         title: "Error",
         description: "An error occurred during login. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onPhoneSubmit = async (data: PhoneLoginForm) => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("/api/auth/phone-login", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+
+      if (response.success) {
+        if (response.requiresOTP) {
+          setShowOtpVerification(true);
+          setPendingVerification(data.phone);
+          toast({
+            title: "OTP Sent",
+            description: "Please check your phone for the verification code.",
+          });
+        } else {
+          localStorage.setItem("authToken", response.token);
+          setLocation("/");
+        }
+      } else {
+        toast({
+          title: "Login failed",
+          description: response.message || "Invalid phone number or password",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred during login. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onOtpSubmit = async (data: OTPForm) => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("/api/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({
+          phone: pendingVerification,
+          otp: data.otp
+        }),
+      });
+
+      if (response.success) {
+        toast({
+          title: "Welcome back!",
+          description: "Phone verification successful.",
+        });
+        localStorage.setItem("authToken", response.token);
+        setLocation("/");
+      } else {
+        toast({
+          title: "Verification failed",
+          description: response.message || "Invalid OTP code",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred during verification. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -88,80 +193,207 @@ export default function Login() {
             </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  {...register("email")}
-                  data-testid="input-email"
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
-              </div>
+            {showOtpVerification ? (
+              /* OTP Verification Form */
+              <div className="space-y-4">
+                <div className="text-center space-y-2">
+                  <Shield className="h-12 w-12 text-primary mx-auto" />
+                  <h3 className="text-lg font-semibold">Verify Your Phone</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enter the 6-digit code sent to {pendingVerification}
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    {...register("password")}
-                    data-testid="input-password"
-                  />
+                <form onSubmit={handleOtpSubmit(onOtpSubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">Verification Code</Label>
+                    <Input
+                      id="otp"
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      maxLength={6}
+                      className="text-center text-lg tracking-wider"
+                      {...registerOtp("otp")}
+                      data-testid="input-otp"
+                    />
+                    {otpErrors.otp && (
+                      <p className="text-sm text-destructive">{otpErrors.otp.message}</p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}
+                    data-testid="button-verify-otp"
+                  >
+                    {isLoading ? "Verifying..." : "Verify & Sign In"}
+                  </Button>
+
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    data-testid="toggle-password"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setShowOtpVerification(false);
+                      setPendingVerification(null);
+                    }}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    Back to Login
                   </Button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
+                </form>
               </div>
+            ) : (
+              /* Login Methods */
+              <Tabs value={loginMethod} onValueChange={(value) => setLoginMethod(value as 'email' | 'phone')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="email" className="flex items-center space-x-2">
+                    <Mail className="h-4 w-4" />
+                    <span>Email</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="phone" className="flex items-center space-x-2">
+                    <Phone className="h-4 w-4" />
+                    <span>Phone</span>
+                  </TabsTrigger>
+                </TabsList>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-                data-testid="button-login"
-              >
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
+                <TabsContent value="email" className="space-y-4 mt-6">
+                  <form onSubmit={handleEmailSubmit(onEmailSubmit)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        {...registerEmail("email")}
+                        data-testid="input-email"
+                      />
+                      {emailErrors.email && (
+                        <p className="text-sm text-destructive">{emailErrors.email.message}</p>
+                      )}
+                    </div>
 
-            <div className="mt-6 text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Don't have an account?{" "}
+                    <div className="space-y-2">
+                      <Label htmlFor="email-password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="email-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          {...registerEmail("password")}
+                          data-testid="input-email-password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                          data-testid="toggle-password"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      {emailErrors.password && (
+                        <p className="text-sm text-destructive">{emailErrors.password.message}</p>
+                      )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                      data-testid="button-email-login"
+                    >
+                      {isLoading ? "Signing in..." : "Sign In with Email"}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="phone" className="space-y-4 mt-6">
+                  <form onSubmit={handlePhoneSubmit(onPhoneSubmit)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        {...registerPhone("phone")}
+                        data-testid="input-phone"
+                      />
+                      {phoneErrors.phone && (
+                        <p className="text-sm text-destructive">{phoneErrors.phone.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone-password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="phone-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          {...registerPhone("password")}
+                          data-testid="input-phone-password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                          data-testid="toggle-password-phone"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      {phoneErrors.password && (
+                        <p className="text-sm text-destructive">{phoneErrors.password.message}</p>
+                      )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                      data-testid="button-phone-login"
+                    >
+                      {isLoading ? "Signing in..." : "Sign In with Phone"}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            )}
+
+            {!showOtpVerification && (
+              <div className="mt-6 text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?{" "}
+                  <Link
+                    href="/signup"
+                    className="text-primary hover:underline font-medium"
+                    data-testid="link-signup"
+                  >
+                    Sign up here
+                  </Link>
+                </p>
                 <Link
-                  href="/signup"
-                  className="text-primary hover:underline font-medium"
-                  data-testid="link-signup"
+                  href="/forgot-password"
+                  className="text-sm text-primary hover:underline"
+                  data-testid="link-forgot-password"
                 >
-                  Sign up here
+                  Forgot your password?
                 </Link>
-              </p>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-primary hover:underline"
-                data-testid="link-forgot-password"
-              >
-                Forgot your password?
-              </Link>
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
