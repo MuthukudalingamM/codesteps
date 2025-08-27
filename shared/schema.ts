@@ -8,11 +8,24 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  phone: text("phone"),
   skillLevel: text("skill_level").notNull().default("beginner"),
   currentStreak: integer("current_streak").notNull().default(0),
   totalLessons: integer("total_lessons").notNull().default(0),
   completedLessons: integer("completed_lessons").notNull().default(0),
   challengesSolved: integer("challenges_solved").notNull().default(0),
+  isEmailVerified: boolean("is_email_verified").notNull().default(false),
+  isPhoneVerified: boolean("is_phone_verified").notNull().default(false),
+  emailVerificationToken: text("email_verification_token"),
+  phoneVerificationCode: text("phone_verification_code"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sessions = pgTable("sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -699,11 +699,16 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id,
+      phone: insertUser.phone || null,
       skillLevel: "beginner",
       currentStreak: 0,
       totalLessons: 3,
       completedLessons: 0,
       challengesSolved: 0,
+      isEmailVerified: false,
+      isPhoneVerified: false,
+      emailVerificationToken: null,
+      phoneVerificationCode: null,
       createdAt: new Date(),
     };
     this.users.set(id, user);

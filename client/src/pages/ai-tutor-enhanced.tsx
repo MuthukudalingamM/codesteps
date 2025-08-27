@@ -42,7 +42,7 @@ interface CodeExecutionResult {
   executionTime: number;
 }
 
-export default function AiTutor() {
+export default function AiTutorEnhanced() {
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");

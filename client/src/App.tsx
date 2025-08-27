@@ -15,6 +15,8 @@ import Challenges from "@/pages/challenges";
 import Community from "@/pages/community";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -43,6 +45,8 @@ function Router() {
       <Route path="/community" component={() => <Layout><Community /></Layout>} />
       <Route path="/profile" component={() => <Layout><Profile /></Layout>} />
       <Route path="/settings" component={() => <Layout><Settings /></Layout>} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
       <Route component={NotFound} />
     </Switch>
   );

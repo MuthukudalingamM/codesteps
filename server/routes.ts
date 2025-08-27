@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertCommunityPostSchema, insertAiSessionSchema } from "@shared/schema";
 import OpenAI from "openai";
+import authRoutes from "./routes/auth";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -10,6 +11,8 @@ const openai = new OpenAI({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth routes
+  app.use('/api/auth', authRoutes);
   // User routes
   app.get("/api/users/:id", async (req, res) => {
     try {
@@ -173,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({ response: aiResponse });
+      res.json({ message: aiResponse });
     } catch (error) {
       console.error("AI chat error:", error);
       res.status(500).json({ message: "Failed to get AI response" });
@@ -242,38 +245,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Code execution route (simplified sandbox)
+  // Enhanced code execution route for the AI tutor
   app.post("/api/code/execute", async (req, res) => {
     try {
       const { code, testCases } = req.body;
+      const startTime = Date.now();
       
-      // Simple code execution simulation
-      // In a real application, you would use a proper code execution sandbox
+      let output = "";
+      let error = null;
+      
+      try {
+        // Create a safe execution context for simple JavaScript
+        const originalConsoleLog = console.log;
+        const logs: string[] = [];
+        console.log = (...args) => {
+          logs.push(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' '));
+        };
+        
+        // Execute the code in a limited context
+        const result = eval(`
+          (() => {
+            ${code}
+          })()
+        `);
+        
+        // Restore console.log
+        console.log = originalConsoleLog;
+        
+        if (logs.length > 0) {
+          output = logs.join('\n');
+        } else if (result !== undefined) {
+          output = String(result);
+        } else {
+          output = "Code executed successfully (no output)";
+        }
+        
+      } catch (executionError) {
+        error = executionError.message;
+      }
+      
+      const executionTime = Date.now() - startTime;
+      
+      // If testCases are provided, run them too
       const results = [];
-      
-      for (const testCase of testCases || []) {
-        try {
-          // This is a simplified example - in production, use a proper sandbox
-          const func = new Function('input', `${code}\nreturn calculateArea ? calculateArea(input) : null;`);
-          const result = func(testCase.input);
-          results.push({
-            input: testCase.input,
-            expected: testCase.expected,
-            actual: result,
-            passed: result === testCase.expected
-          });
-        } catch (error) {
-          results.push({
-            input: testCase.input,
-            expected: testCase.expected,
-            actual: null,
-            passed: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
+      if (testCases && testCases.length > 0) {
+        for (const testCase of testCases) {
+          try {
+            // This is a simplified example - in production, use a proper sandbox
+            const func = new Function('input', `${code}\nreturn calculateArea ? calculateArea(input) : null;`);
+            const result = func(testCase.input);
+            results.push({
+              input: testCase.input,
+              expected: testCase.expected,
+              actual: result,
+              passed: result === testCase.expected
+            });
+          } catch (testError) {
+            results.push({
+              input: testCase.input,
+              expected: testCase.expected,
+              actual: null,
+              passed: false,
+              error: testError instanceof Error ? testError.message : 'Unknown error'
+            });
+          }
         }
       }
       
-      res.json({ results, success: results.every(r => r.passed) });
+      res.json({
+        output,
+        error,
+        executionTime,
+        results,
+        success: !error
+      });
     } catch (error) {
       res.status(500).json({ message: "Code execution failed" });
     }
