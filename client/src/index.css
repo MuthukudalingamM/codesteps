@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(210, 40%, 98%);
+  --foreground: hsl(222, 45%, 11%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222, 45%, 11%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222, 45%, 11%);
+  --primary: hsl(221, 83%, 53%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(214, 32%, 91%);
+  --secondary-foreground: hsl(222, 45%, 11%);
+  --muted: hsl(214, 32%, 91%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --accent: hsl(142, 76%, 36%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --ring: hsl(221, 83%, 53%);
+  --chart-1: hsl(221, 83%, 53%);
+  --chart-2: hsl(142, 76%, 36%);
+  --chart-3: hsl(42, 92%, 56%);
+  --chart-4: hsl(147, 78%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  --sidebar: hsl(0, 0%, 100%);
+  --sidebar-foreground: hsl(222, 45%, 11%);
+  --sidebar-primary: hsl(221, 83%, 53%);
+  --sidebar-primary-foreground: hsl(210, 40%, 98%);
+  --sidebar-accent: hsl(214, 32%, 91%);
+  --sidebar-accent-foreground: hsl(221, 83%, 53%);
+  --sidebar-border: hsl(214, 32%, 91%);
+  --sidebar-ring: hsl(221, 83%, 53%);
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+  --radius: 8px;
+  --shadow-2xs: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00), 0px 1px 2px -1px hsl(221, 83%, 53%, 0.00);
+  --shadow: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00), 0px 1px 2px -1px hsl(221, 83%, 53%, 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00), 0px 2px 4px -1px hsl(221, 83%, 53%, 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00), 0px 4px 6px -1px hsl(221, 83%, 53%, 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00), 0px 8px 10px -1px hsl(221, 83%, 53%, 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(221, 83%, 53%, 0.00);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: hsl(224, 71%, 4%);
+  --foreground: hsl(213, 31%, 91%);
+  --card: hsl(224, 71%, 4%);
+  --card-foreground: hsl(213, 31%, 91%);
+  --popover: hsl(224, 71%, 4%);
+  --popover-foreground: hsl(213, 31%, 91%);
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(222, 47%, 11%);
+  --secondary: hsl(222, 47%, 11%);
+  --secondary-foreground: hsl(213, 31%, 91%);
+  --muted: hsl(223, 47%, 11%);
+  --muted-foreground: hsl(215, 16%, 57%);
+  --accent: hsl(142, 76%, 36%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(213, 31%, 91%);
+  --border: hsl(223, 47%, 11%);
+  --input: hsl(223, 47%, 11%);
+  --ring: hsl(217, 91%, 60%);
+  --chart-1: hsl(217, 91%, 60%);
+  --chart-2: hsl(142, 76%, 36%);
+  --chart-3: hsl(42, 92%, 56%);
+  --chart-4: hsl(147, 78%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  --sidebar: hsl(224, 71%, 4%);
+  --sidebar-foreground: hsl(213, 31%, 91%);
+  --sidebar-primary: hsl(217, 91%, 60%);
+  --sidebar-primary-foreground: hsl(222, 47%, 11%);
+  --sidebar-accent: hsl(223, 47%, 11%);
+  --sidebar-accent-foreground: hsl(217, 91%, 60%);
+  --sidebar-border: hsl(223, 47%, 11%);
+  --sidebar-ring: hsl(217, 91%, 60%);
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+  --radius: 8px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Code syntax highlighting */
+  .syntax-keyword {
+    @apply text-purple-500;
+  }
+  
+  .syntax-string {
+    @apply text-green-500;
+  }
+  
+  .syntax-number {
+    @apply text-orange-500;
+  }
+  
+  .syntax-comment {
+    @apply text-gray-500;
+  }
+  
+  .syntax-function {
+    @apply text-blue-500;
+  }
+}
