@@ -187,6 +187,7 @@ export default function Login() {
   };
 
   const hasAnyOAuthProvider = oauthStatus && (oauthStatus.google || oauthStatus.microsoft || oauthStatus.linkedin);
+  const isDevelopment = import.meta.env.DEV;
 
   if (showOTPStep) {
     return (
