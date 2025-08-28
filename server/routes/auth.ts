@@ -418,40 +418,21 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Test endpoint for debugging
-router.get('/test', (req, res) => {
-  console.log('Auth test endpoint hit');
-  res.json({ message: 'Auth routes working', timestamp: new Date().toISOString() });
-});
-
 // OAuth status endpoint
 router.get('/oauth-status', (req, res) => {
-  try {
-    console.log('OAuth status endpoint hit');
-    console.log('Google configured:', isGoogleConfigured);
-    console.log('Microsoft configured:', isMicrosoftConfigured);
-    console.log('LinkedIn configured:', isLinkedInConfigured);
+  // Simple, reliable response
+  const statusData = {
+    google: isGoogleConfigured,
+    microsoft: isMicrosoftConfigured,
+    linkedin: isLinkedInConfigured,
+    message: !isGoogleConfigured && !isMicrosoftConfigured && !isLinkedInConfigured
+      ? 'No OAuth providers configured. Please set up environment variables.'
+      : 'Some OAuth providers are available.',
+    timestamp: new Date().toISOString()
+  };
 
-    const statusData = {
-      google: isGoogleConfigured,
-      microsoft: isMicrosoftConfigured,
-      linkedin: isLinkedInConfigured,
-      message: !isGoogleConfigured && !isMicrosoftConfigured && !isLinkedInConfigured
-        ? 'No OAuth providers configured. Please set up environment variables.'
-        : 'Some OAuth providers are available.',
-      timestamp: new Date().toISOString()
-    };
-
-    console.log('Sending OAuth status response:', statusData);
-    res.setHeader('Content-Type', 'application/json');
-    res.json(statusData);
-  } catch (error) {
-    console.error('Error in oauth-status endpoint:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json(statusData);
 });
 
 // Social login routes - only register if configured
