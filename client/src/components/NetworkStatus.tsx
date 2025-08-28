@@ -24,16 +24,21 @@ export const NetworkStatus = () => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
-        
-        const response = await fetch('/api/auth/oauth-status', {
-          method: 'HEAD', // Just check if server responds
+
+        const response = await fetch('/api/auth/ping', {
+          method: 'GET',
           signal: controller.signal,
         });
-        
+
         clearTimeout(timeoutId);
         setServerReachable(response.ok);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🏓 Server ping successful:', data);
+        }
       } catch (error) {
-        console.error('Server connectivity check failed:', error);
+        console.error('🏓 Server ping failed:', error);
         setServerReachable(false);
       }
     };
