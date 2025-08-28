@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useOAuthStatus } from "@/hooks/use-oauth-status";
 import { Eye, EyeOff, Code, ArrowLeft, Mail, Phone, AlertCircle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
