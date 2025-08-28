@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiRequest } from '@/lib/api';
 
 interface User {
   id: string;
@@ -38,6 +37,44 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper function to make API requests with proper error handling
+const makeApiRequest = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('authToken');
+  
+  const defaultHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token && !url.includes('/login') && !url.includes('/signup')) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  });
+
+  // Clone the response to avoid "body stream already read" errors
+  const responseClone = response.clone();
+  
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    // If JSON parsing fails, try with the cloned response
+    try {
+      data = await responseClone.json();
+    } catch (secondError) {
+      throw new Error('Failed to parse response as JSON');
+    }
+  }
+
+  return { response, data };
+};
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,22 +86,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const token = localStorage.getItem('authToken');
         if (token) {
           // Verify token and get user data
-          const response = await fetch('/api/auth/verify', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+          const { response, data } = await makeApiRequest('/api/auth/verify', {
+            method: 'GET'
           });
           
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              setUser(data.user);
-            } else {
-              // Token is invalid, remove it
-              localStorage.removeItem('authToken');
-            }
+          if (response.ok && data.success) {
+            setUser(data.user);
           } else {
             // Token is invalid, remove it
             localStorage.removeItem('authToken');
@@ -91,15 +118,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (token && provider) {
       localStorage.setItem('authToken', token);
       // Fetch user data
-      fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      makeApiRequest('/api/auth/me', {
+        method: 'GET'
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
+      .then(({ response, data }) => {
+        if (response.ok && data.success) {
           setUser(data.user);
           // Clear URL parameters and redirect to dashboard
           window.history.replaceState({}, document.title, '/dashboard');
@@ -117,15 +140,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/login', {
+      
+      const { response, data } = await makeApiRequest('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ email, password })
       });
-
-      const data = await response.json();
 
       if (response.ok && data.success) {
         localStorage.setItem('authToken', data.token);
@@ -145,15 +164,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const loginWithPhone = async (phone: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/phone-login', {
+      
+      const { response, data } = await makeApiRequest('/api/auth/phone-login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ phone, password })
       });
-
-      const data = await response.json();
 
       if (response.ok && data.success) {
         if (data.requiresOTP) {
@@ -178,15 +193,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const verifyOTP = async (phone: string, otp: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/verify-otp', {
+      
+      const { response, data } = await makeApiRequest('/api/auth/verify-otp', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ phone, otp })
       });
-
-      const data = await response.json();
 
       if (response.ok && data.success) {
         localStorage.setItem('authToken', data.token);
@@ -206,15 +217,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signup = async (userData: any): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/auth/signup', {
+      
+      const { response, data } = await makeApiRequest('/api/auth/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(userData)
       });
-
-      const data = await response.json();
 
       if (response.ok && data.success) {
         return true;
