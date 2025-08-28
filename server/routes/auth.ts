@@ -16,88 +16,99 @@ if (process.env.SENDGRID_API_KEY) {
   mailService.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-// Configure passport strategies
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID || 'demo-google-client-id',
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'demo-google-client-secret',
-  callbackURL: "/api/auth/google/callback"
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    // Check if user exists
-    let user = await storage.getUserByEmail(profile.emails?.[0]?.value || '');
-    
-    if (!user) {
-      // Create new user
-      user = await storage.createUser({
-        username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || 'user',
-        email: profile.emails?.[0]?.value || '',
-        password: await bcrypt.hash(Math.random().toString(36), 10), // Random password for OAuth users
-        isEmailVerified: true, // Email verified through OAuth provider
-        isPhoneVerified: false,
-        emailVerificationToken: null,
-        phoneVerificationCode: null,
-      });
-    }
-    
-    return done(null, user);
-  } catch (error) {
-    return done(error, false);
-  }
-}));
+// Check if OAuth providers are configured
+const isGoogleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+const isMicrosoftConfigured = !!(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
+const isLinkedInConfigured = !!(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET);
 
-passport.use(new MicrosoftStrategy({
-  clientID: process.env.MICROSOFT_CLIENT_ID || 'demo-microsoft-client-id',
-  clientSecret: process.env.MICROSOFT_CLIENT_SECRET || 'demo-microsoft-client-secret',
-  callbackURL: "/api/auth/microsoft/callback",
-  scope: ['user.read']
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    let user = await storage.getUserByEmail(profile.emails?.[0]?.value || '');
-    
-    if (!user) {
-      user = await storage.createUser({
-        username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || 'user',
-        email: profile.emails?.[0]?.value || '',
-        password: await bcrypt.hash(Math.random().toString(36), 10),
-        isEmailVerified: true,
-        isPhoneVerified: false,
-        emailVerificationToken: null,
-        phoneVerificationCode: null,
-      });
+// Configure passport strategies only if credentials are available
+if (isGoogleConfigured) {
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    callbackURL: "/api/auth/google/callback"
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      // Check if user exists
+      let user = await storage.getUserByEmail(profile.emails?.[0]?.value || '');
+      
+      if (!user) {
+        // Create new user
+        user = await storage.createUser({
+          username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || 'user',
+          email: profile.emails?.[0]?.value || '',
+          password: await bcrypt.hash(Math.random().toString(36), 10), // Random password for OAuth users
+          isEmailVerified: true, // Email verified through OAuth provider
+          isPhoneVerified: false,
+          emailVerificationToken: null,
+          phoneVerificationCode: null,
+        });
+      }
+      
+      return done(null, user);
+    } catch (error) {
+      return done(error, false);
     }
-    
-    return done(null, user);
-  } catch (error) {
-    return done(error, false);
-  }
-}));
+  }));
+}
 
-passport.use(new LinkedInStrategy({
-  clientID: process.env.LINKEDIN_CLIENT_ID || 'demo-linkedin-client-id',
-  clientSecret: process.env.LINKEDIN_CLIENT_SECRET || 'demo-linkedin-client-secret',
-  callbackURL: "/api/auth/linkedin/callback",
-  scope: ['r_emailaddress', 'r_liteprofile']
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    let user = await storage.getUserByEmail(profile.emails?.[0]?.value || '');
-    
-    if (!user) {
-      user = await storage.createUser({
-        username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || 'user',
-        email: profile.emails?.[0]?.value || '',
-        password: await bcrypt.hash(Math.random().toString(36), 10),
-        isEmailVerified: true,
-        isPhoneVerified: false,
-        emailVerificationToken: null,
-        phoneVerificationCode: null,
-      });
+if (isMicrosoftConfigured) {
+  passport.use(new MicrosoftStrategy({
+    clientID: process.env.MICROSOFT_CLIENT_ID!,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+    callbackURL: "/api/auth/microsoft/callback",
+    scope: ['user.read']
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      let user = await storage.getUserByEmail(profile.emails?.[0]?.value || '');
+      
+      if (!user) {
+        user = await storage.createUser({
+          username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || 'user',
+          email: profile.emails?.[0]?.value || '',
+          password: await bcrypt.hash(Math.random().toString(36), 10),
+          isEmailVerified: true,
+          isPhoneVerified: false,
+          emailVerificationToken: null,
+          phoneVerificationCode: null,
+        });
+      }
+      
+      return done(null, user);
+    } catch (error) {
+      return done(error, false);
     }
-    
-    return done(null, user);
-  } catch (error) {
-    return done(error, false);
-  }
-}));
+  }));
+}
+
+if (isLinkedInConfigured) {
+  passport.use(new LinkedInStrategy({
+    clientID: process.env.LINKEDIN_CLIENT_ID!,
+    clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
+    callbackURL: "/api/auth/linkedin/callback",
+    scope: ['r_emailaddress', 'r_liteprofile']
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      let user = await storage.getUserByEmail(profile.emails?.[0]?.value || '');
+      
+      if (!user) {
+        user = await storage.createUser({
+          username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || 'user',
+          email: profile.emails?.[0]?.value || '',
+          password: await bcrypt.hash(Math.random().toString(36), 10),
+          isEmailVerified: true,
+          isPhoneVerified: false,
+          emailVerificationToken: null,
+          phoneVerificationCode: null,
+        });
+      }
+      
+      return done(null, user);
+    } catch (error) {
+      return done(error, false);
+    }
+  }));
+}
 
 // Generate random verification code
 const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -407,55 +418,97 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Social login routes
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+// OAuth status endpoint
+router.get('/oauth-status', (req, res) => {
+  res.json({
+    google: isGoogleConfigured,
+    microsoft: isMicrosoftConfigured,
+    linkedin: isLinkedInConfigured,
+    message: !isGoogleConfigured && !isMicrosoftConfigured && !isLinkedInConfigured 
+      ? 'No OAuth providers configured. Please set up environment variables.' 
+      : 'Some OAuth providers are available.'
+  });
+});
 
-router.get('/google/callback', 
-  passport.authenticate('google', { session: false }),
-  (req, res) => {
-    try {
-      const user = req.user as any;
-      const token = generateToken(user);
-      
-      // Redirect to frontend with token
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`);
-    } catch (error) {
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=google_auth_failed`);
+// Social login routes - only register if configured
+if (isGoogleConfigured) {
+  router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+  router.get('/google/callback', 
+    passport.authenticate('google', { session: false }),
+    (req, res) => {
+      try {
+        const user = req.user as any;
+        const token = generateToken(user);
+        
+        // Redirect to frontend with token
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=google`);
+      } catch (error) {
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=google_auth_failed`);
+      }
     }
-  }
-);
+  );
+} else {
+  router.get('/google', (req, res) => {
+    res.redirect('/login?error=google_not_configured');
+  });
+  
+  router.get('/google/callback', (req, res) => {
+    res.redirect('/login?error=google_not_configured');
+  });
+}
 
-router.get('/microsoft', passport.authenticate('microsoft', { scope: ['user.read'] }));
+if (isMicrosoftConfigured) {
+  router.get('/microsoft', passport.authenticate('microsoft', { scope: ['user.read'] }));
 
-router.get('/microsoft/callback',
-  passport.authenticate('microsoft', { session: false }),
-  (req, res) => {
-    try {
-      const user = req.user as any;
-      const token = generateToken(user);
-      
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=microsoft`);
-    } catch (error) {
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=microsoft_auth_failed`);
+  router.get('/microsoft/callback',
+    passport.authenticate('microsoft', { session: false }),
+    (req, res) => {
+      try {
+        const user = req.user as any;
+        const token = generateToken(user);
+        
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=microsoft`);
+      } catch (error) {
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=microsoft_auth_failed`);
+      }
     }
-  }
-);
+  );
+} else {
+  router.get('/microsoft', (req, res) => {
+    res.redirect('/login?error=microsoft_not_configured');
+  });
+  
+  router.get('/microsoft/callback', (req, res) => {
+    res.redirect('/login?error=microsoft_not_configured');
+  });
+}
 
-router.get('/linkedin', passport.authenticate('linkedin'));
+if (isLinkedInConfigured) {
+  router.get('/linkedin', passport.authenticate('linkedin'));
 
-router.get('/linkedin/callback',
-  passport.authenticate('linkedin', { session: false }),
-  (req, res) => {
-    try {
-      const user = req.user as any;
-      const token = generateToken(user);
-      
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=linkedin`);
-    } catch (error) {
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=linkedin_auth_failed`);
+  router.get('/linkedin/callback',
+    passport.authenticate('linkedin', { session: false }),
+    (req, res) => {
+      try {
+        const user = req.user as any;
+        const token = generateToken(user);
+        
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/auth/callback?token=${token}&provider=linkedin`);
+      } catch (error) {
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=linkedin_auth_failed`);
+      }
     }
-  }
-);
+  );
+} else {
+  router.get('/linkedin', (req, res) => {
+    res.redirect('/login?error=linkedin_not_configured');
+  });
+  
+  router.get('/linkedin/callback', (req, res) => {
+    res.redirect('/login?error=linkedin_not_configured');
+  });
+}
 
 // Get current user
 router.get('/me', async (req, res) => {
