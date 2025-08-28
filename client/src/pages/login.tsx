@@ -280,12 +280,12 @@ export default function Login() {
           <p className="text-muted-foreground">Sign in to continue your learning journey</p>
         </div>
 
-        {/* Network Status for debugging */}
-        <NetworkStatus />
-
-        {/* Fetch Test for debugging (only show when there are OAuth errors) */}
-        {oauthError && (
-          <FetchTest />
+        {/* Debug components - only show in development or when there are errors */}
+        {(isDevelopment || oauthError) && (
+          <>
+            <NetworkStatus />
+            {oauthError && <FetchTest />}
+          </>
         )}
 
         {/* OAuth Status Debugging */}
