@@ -261,7 +261,16 @@ export default function Signup() {
             </div>
 
             {/* OAuth Configuration Alert */}
-            {oauthStatus && !hasAnyOAuthProvider && (
+            {oauthError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Failed to check OAuth configuration: {oauthError}. Email signup is still available.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {oauthStatus && !hasAnyOAuthProvider && !oauthError && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
