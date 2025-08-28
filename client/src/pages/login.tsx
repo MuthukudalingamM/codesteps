@@ -277,6 +277,9 @@ export default function Login() {
           <p className="text-muted-foreground">Sign in to continue your learning journey</p>
         </div>
 
+        {/* Network Status for debugging */}
+        <NetworkStatus />
+
         {/* OAuth Configuration Alert */}
         {oauthError && (
           <Alert variant="destructive">
