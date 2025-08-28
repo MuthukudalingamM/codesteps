@@ -63,41 +63,64 @@ export default function Login() {
 
   // Check OAuth configuration status
   useEffect(() => {
-    const checkOAuthStatus = async () => {
-      try {
-        console.log('Checking OAuth status...');
-        const response = await fetch('/api/auth/oauth-status');
-        console.log('OAuth status response:', response.status, response.statusText);
+    const checkOAuthStatus = async (retries = 3) => {
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          console.log(`Checking OAuth status (attempt ${attempt}/${retries})...`);
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          // Add a small delay for subsequent attempts
+          if (attempt > 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+
+          const response = await fetch('/api/auth/oauth-status', {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          });
+
+          console.log('OAuth status response:', response.status, response.statusText);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const contentType = response.headers.get('content-type');
+          console.log('Response content-type:', contentType);
+
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response received:', text.substring(0, 200));
+            throw new Error('Server returned non-JSON response');
+          }
+
+          const status = await response.json();
+          console.log('OAuth status data:', status);
+          setOauthStatus(status);
+          return; // Success, exit the retry loop
+
+        } catch (error) {
+          console.error(`OAuth status check attempt ${attempt} failed:`, error);
+
+          if (attempt === retries) {
+            // Last attempt failed, set default status
+            console.error('All OAuth status check attempts failed');
+            setOauthStatus({
+              google: false,
+              microsoft: false,
+              linkedin: false,
+              message: 'Failed to check OAuth configuration'
+            });
+          }
         }
-
-        const contentType = response.headers.get('content-type');
-        console.log('Response content-type:', contentType);
-
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Non-JSON response received:', text.substring(0, 200));
-          throw new Error('Server returned non-JSON response');
-        }
-
-        const status = await response.json();
-        console.log('OAuth status data:', status);
-        setOauthStatus(status);
-      } catch (error) {
-        console.error('Failed to check OAuth status:', error);
-        // Set a default status to prevent UI issues
-        setOauthStatus({
-          google: false,
-          microsoft: false,
-          linkedin: false,
-          message: 'Failed to check OAuth configuration'
-        });
       }
     };
 
-    checkOAuthStatus();
+    // Add a small initial delay to ensure server is ready
+    setTimeout(() => {
+      checkOAuthStatus();
+    }, 500);
   }, []);
 
   // Check for errors in URL params
