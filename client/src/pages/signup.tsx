@@ -10,7 +10,6 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Code, ArrowLeft, Mail, Phone } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { apiRequest } from "@/lib/api";
 
 const signupSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -24,6 +23,38 @@ const signupSchema = z.object({
 });
 
 type SignupForm = z.infer<typeof signupSchema>;
+
+// Helper function to make API requests with proper error handling
+const makeApiRequest = async (url: string, options: RequestInit = {}) => {
+  const defaultHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  });
+
+  // Clone the response to avoid "body stream already read" errors
+  const responseClone = response.clone();
+  
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    // If JSON parsing fails, try with the cloned response
+    try {
+      data = await responseClone.json();
+    } catch (secondError) {
+      throw new Error('Failed to parse response as JSON');
+    }
+  }
+
+  return { response, data };
+};
 
 export default function Signup() {
   const [, setLocation] = useLocation();
@@ -47,7 +78,7 @@ export default function Signup() {
   const onSubmit = async (data: SignupForm) => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/signup", {
+      const { response, data: responseData } = await makeApiRequest("/api/auth/signup", {
         method: "POST",
         body: JSON.stringify({
           username: data.username,
@@ -57,18 +88,18 @@ export default function Signup() {
         }),
       });
 
-      if (response.success) {
+      if (response.ok && responseData.success) {
         setUserEmail(data.email);
         setUserPhone(data.phone || '');
         setStep('verify-email');
         toast({
           title: "Account created!",
-          description: response.message || "Please check your email for verification code.",
+          description: responseData.message || "Please check your email for verification code.",
         });
       } else {
         toast({
           title: "Signup failed",
-          description: response.message || "An error occurred during signup",
+          description: responseData.message || "An error occurred during signup",
           variant: "destructive",
         });
       }
@@ -86,7 +117,7 @@ export default function Signup() {
   const verifyEmail = async () => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/verify-email", {
+      const { response, data: responseData } = await makeApiRequest("/api/auth/verify-email", {
         method: "POST",
         body: JSON.stringify({
           email: userEmail,
@@ -94,7 +125,7 @@ export default function Signup() {
         }),
       });
 
-      if (response.success) {
+      if (response.ok && responseData.success) {
         if (userPhone) {
           setStep('verify-phone');
           setVerificationCode('');
@@ -112,7 +143,7 @@ export default function Signup() {
       } else {
         toast({
           title: "Verification failed",
-          description: response.message || "Invalid verification code",
+          description: responseData.message || "Invalid verification code",
           variant: "destructive",
         });
       }
@@ -130,7 +161,7 @@ export default function Signup() {
   const verifyPhone = async () => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("/api/auth/verify-phone", {
+      const { response, data: responseData } = await makeApiRequest("/api/auth/verify-phone", {
         method: "POST",
         body: JSON.stringify({
           phone: userPhone,
@@ -138,7 +169,7 @@ export default function Signup() {
         }),
       });
 
-      if (response.success) {
+      if (response.ok && responseData.success) {
         toast({
           title: "Phone verified!",
           description: "Registration complete! You can now sign in.",
@@ -147,7 +178,7 @@ export default function Signup() {
       } else {
         toast({
           title: "Verification failed",
-          description: response.message || "Invalid verification code",
+          description: responseData.message || "Invalid verification code",
           variant: "destructive",
         });
       }
@@ -164,14 +195,14 @@ export default function Signup() {
 
   const resendCode = async (type: 'email' | 'phone') => {
     try {
-      const response = await apiRequest(`/api/auth/resend-${type}-code`, {
+      const { response, data: responseData } = await makeApiRequest(`/api/auth/resend-${type}-code`, {
         method: "POST",
         body: JSON.stringify({
           [type]: type === 'email' ? userEmail : userPhone,
         }),
       });
 
-      if (response.success) {
+      if (response.ok && responseData.success) {
         toast({
           title: "Code sent!",
           description: `New verification code sent to your ${type}.`,
