@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useOAuthStatus } from "@/hooks/use-oauth-status";
+import { NetworkStatus } from "@/components/NetworkStatus";
 import { Eye, EyeOff, Code, ArrowLeft, Mail, Phone, AlertCircle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
