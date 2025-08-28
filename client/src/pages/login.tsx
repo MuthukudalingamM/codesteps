@@ -33,22 +33,15 @@ type EmailLoginForm = z.infer<typeof emailLoginSchema>;
 type PhoneLoginForm = z.infer<typeof phoneLoginSchema>;
 type OTPForm = z.infer<typeof otpSchema>;
 
-interface OAuthStatus {
-  google: boolean;
-  microsoft: boolean;
-  linkedin: boolean;
-  message: string;
-}
-
 export default function Login() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showOTPStep, setShowOTPStep] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<string>("");
-  const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
   const { toast } = useToast();
   const { login, loginWithPhone, verifyOTP } = useAuth();
+  const { oauthStatus, isLoading: isOAuthLoading, error: oauthError } = useOAuthStatus();
 
   const emailForm = useForm<EmailLoginForm>({
     resolver: zodResolver(emailLoginSchema),
