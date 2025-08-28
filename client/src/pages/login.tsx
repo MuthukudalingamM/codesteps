@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useOAuthStatus } from "@/hooks/use-oauth-status";
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { FetchTest } from "@/components/FetchTest";
 import { Eye, EyeOff, Code, ArrowLeft, Mail, Phone, AlertCircle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
