@@ -26,13 +26,6 @@ const signupSchema = z.object({
 
 type SignupForm = z.infer<typeof signupSchema>;
 
-interface OAuthStatus {
-  google: boolean;
-  microsoft: boolean;
-  linkedin: boolean;
-  message: string;
-}
-
 // Helper function to make API requests with proper error handling
 const makeApiRequest = async (url: string, options: RequestInit = {}) => {
   const defaultHeaders: Record<string, string> = {
@@ -49,7 +42,7 @@ const makeApiRequest = async (url: string, options: RequestInit = {}) => {
 
   // Clone the response to avoid "body stream already read" errors
   const responseClone = response.clone();
-  
+
   let data;
   try {
     data = await response.json();
@@ -74,8 +67,8 @@ export default function Signup() {
   const [userEmail, setUserEmail] = useState('');
   const [userPhone, setUserPhone] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
   const { toast } = useToast();
+  const { oauthStatus, isLoading: isOAuthLoading, error: oauthError } = useOAuthStatus();
 
   const {
     register,
