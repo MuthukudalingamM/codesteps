@@ -280,12 +280,22 @@ export default function Login() {
         {/* Network Status for debugging */}
         <NetworkStatus />
 
+        {/* OAuth Status Debugging */}
+        {isOAuthLoading && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Checking OAuth configuration...
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* OAuth Configuration Alert */}
         {oauthError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Failed to check OAuth configuration: {oauthError}. Email/phone login is still available.
+              OAuth check failed: {oauthError}. Email/phone login is still available.
             </AlertDescription>
           </Alert>
         )}
