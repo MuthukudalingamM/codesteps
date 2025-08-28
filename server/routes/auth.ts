@@ -418,6 +418,16 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Simple connectivity test endpoint
+router.get('/ping', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    message: 'Server is reachable'
+  });
+});
+
 // OAuth status endpoint
 router.get('/oauth-status', (req, res) => {
   // Simple, reliable response
