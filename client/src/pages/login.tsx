@@ -65,11 +65,35 @@ export default function Login() {
   useEffect(() => {
     const checkOAuthStatus = async () => {
       try {
+        console.log('Checking OAuth status...');
         const response = await fetch('/api/auth/oauth-status');
+        console.log('OAuth status response:', response.status, response.statusText);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        console.log('Response content-type:', contentType);
+
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Non-JSON response received:', text.substring(0, 200));
+          throw new Error('Server returned non-JSON response');
+        }
+
         const status = await response.json();
+        console.log('OAuth status data:', status);
         setOauthStatus(status);
       } catch (error) {
         console.error('Failed to check OAuth status:', error);
+        // Set a default status to prevent UI issues
+        setOauthStatus({
+          google: false,
+          microsoft: false,
+          linkedin: false,
+          message: 'Failed to check OAuth configuration'
+        });
       }
     };
 
