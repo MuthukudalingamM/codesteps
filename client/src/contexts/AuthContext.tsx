@@ -49,16 +49,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const token = localStorage.getItem('authToken');
         if (token) {
           // Verify token and get user data
-          const response = await apiRequest('/api/auth/verify', {
+          const response = await fetch('/api/auth/verify', {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           });
           
           if (response.ok) {
-            const userData = await response.json();
-            setUser(userData.user);
+            const data = await response.json();
+            if (data.success) {
+              setUser(data.user);
+            } else {
+              // Token is invalid, remove it
+              localStorage.removeItem('authToken');
+            }
           } else {
             // Token is invalid, remove it
             localStorage.removeItem('authToken');
@@ -75,15 +81,48 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAuthStatus();
   }, []);
 
+  // Handle social auth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const provider = urlParams.get('provider');
+    const error = urlParams.get('error');
+
+    if (token && provider) {
+      localStorage.setItem('authToken', token);
+      // Fetch user data
+      fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setUser(data.user);
+          // Clear URL parameters and redirect to dashboard
+          window.history.replaceState({}, document.title, '/dashboard');
+        }
+      })
+      .catch(err => console.error('Failed to fetch user after social login:', err));
+    }
+
+    if (error) {
+      console.error('Social auth error:', error);
+      // Show error message to user
+    }
+  }, []);
+
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await apiRequest('/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password, method: 'email' })
+        body: JSON.stringify({ email, password })
       });
 
       const data = await response.json();
@@ -106,7 +145,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const loginWithPhone = async (phone: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await apiRequest('/api/auth/phone-login', {
+      const response = await fetch('/api/auth/phone-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -139,7 +178,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const verifyOTP = async (phone: string, otp: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await apiRequest('/api/auth/verify-otp', {
+      const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -167,7 +206,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signup = async (userData: any): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await apiRequest('/api/auth/signup', {
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -193,6 +232,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     localStorage.removeItem('authToken');
     setUser(null);
+    // Redirect to login page
+    window.location.href = '/login';
   };
 
   const value: AuthContextType = {
