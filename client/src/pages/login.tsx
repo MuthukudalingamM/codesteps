@@ -282,6 +282,11 @@ export default function Login() {
         {/* Network Status for debugging */}
         <NetworkStatus />
 
+        {/* Fetch Test for debugging (only show when there are OAuth errors) */}
+        {oauthError && (
+          <FetchTest />
+        )}
+
         {/* OAuth Status Debugging */}
         {isOAuthLoading && (
           <Alert>
