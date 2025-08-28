@@ -277,7 +277,16 @@ export default function Login() {
         </div>
 
         {/* OAuth Configuration Alert */}
-        {oauthStatus && !hasAnyOAuthProvider && (
+        {oauthError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to check OAuth configuration: {oauthError}. Email/phone login is still available.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {oauthStatus && !hasAnyOAuthProvider && !oauthError && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
