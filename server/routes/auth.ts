@@ -571,6 +571,30 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// Debug endpoint to check verification codes (development only)
+router.get('/debug-codes/:email', async (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  
+  try {
+    const user = await storage.getUserByEmail(req.params.email);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({
+      email: user.email,
+      emailVerificationToken: user.emailVerificationToken,
+      phoneVerificationCode: user.phoneVerificationCode,
+      isEmailVerified: user.isEmailVerified,
+      isPhoneVerified: user.isPhoneVerified
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error retrieving codes' });
+  }
+});
+
 // Verify token endpoint (for compatibility)
 router.get('/verify', async (req, res) => {
   try {
