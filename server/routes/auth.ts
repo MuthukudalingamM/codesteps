@@ -6,15 +6,18 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as MicrosoftStrategy } from "passport-microsoft";
 import { Strategy as LinkedInStrategy } from "passport-linkedin-oauth2";
 import { storage } from "../storage";
-import { MailService } from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
 const router = Router();
 
-// Initialize SendGrid
-const mailService = new MailService();
-if (process.env.SENDGRID_API_KEY) {
-  mailService.setApiKey(process.env.SENDGRID_API_KEY);
-}
+// Initialize Gmail SMTP transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USERNAME,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 // Check if OAuth providers are configured
 const isGoogleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
@@ -115,20 +118,20 @@ const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString(
 
 // Send email verification
 async function sendEmailVerification(email: string, code: string) {
-  if (!process.env.SENDGRID_API_KEY) {
+  if (!process.env.GMAIL_USERNAME || !process.env.GMAIL_APP_PASSWORD) {
     console.log(`📧 Email verification code for ${email}: ${code}`);
     return true;
   }
 
   try {
-    await mailService.send({
+    const mailOptions = {
+      from: `"AI Tutor - CodeSteps" <${process.env.GMAIL_USERNAME}>`,
       to: email,
-      from: 'noreply@codesteps.com', // You would use your verified sender
-      subject: 'CodeSteps - Verify Your Email',
+      subject: 'AI Tutor - Verify Your Email',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb; margin: 0;">Welcome to CodeSteps!</h1>
+            <h1 style="color: #2563eb; margin: 0;">Welcome to AI Tutor!</h1>
             <p style="color: #6b7280; margin: 5px 0 0 0;">AI-Powered Programming Learning</p>
           </div>
           
@@ -151,12 +154,14 @@ async function sendEmailVerification(email: string, code: string) {
           
           <div style="text-align: center; margin-top: 30px;">
             <p style="color: #9ca3af; font-size: 12px;">
-              If you didn't create an account with CodeSteps, please ignore this email.
+              If you didn't create an account with AI Tutor, please ignore this email.
             </p>
           </div>
         </div>
       `
-    });
+    };
+
+    await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
     console.error('Email sending failed:', error);
