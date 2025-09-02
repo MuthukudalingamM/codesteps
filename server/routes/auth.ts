@@ -240,9 +240,10 @@ router.post('/signup', async (req, res) => {
       success: true, 
       message: emailSent 
         ? 'Account created successfully. Please check your email for verification code.' 
-        : 'Account created successfully. Verification code sent to console (check server logs).',
+        : `Account created successfully. Email sending failed - verification code is: ${emailCode}`,
       requiresVerification: true,
-      hasPhone: !!phone
+      hasPhone: !!phone,
+      verificationCode: !emailSent ? emailCode : undefined
     });
   } catch (error) {
     console.error('Signup error:', error);
@@ -334,9 +335,13 @@ router.post('/resend-email-code', async (req, res) => {
 
     const newCode = generateCode();
     await storage.updateUser(user.id, { emailVerificationToken: newCode });
-    await sendEmailVerification(email, newCode);
+    const emailSent = await sendEmailVerification(email, newCode);
 
-    res.json({ success: true, message: 'New verification code sent' });
+    res.json({ 
+      success: true, 
+      message: emailSent ? 'New verification code sent' : `Email sending failed - verification code is: ${newCode}`,
+      verificationCode: !emailSent ? newCode : undefined 
+    });
   } catch (error) {
     console.error('Resend email error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -367,7 +372,11 @@ router.post('/resend-phone-code', async (req, res) => {
     await storage.updateUser(user.id, { phoneVerificationCode: newCode });
     await sendPhoneVerification(phone, newCode);
 
-    res.json({ success: true, message: 'New verification code sent' });
+    res.json({ 
+      success: true, 
+      message: `New verification code sent to ${phone}: ${newCode}`,
+      verificationCode: newCode
+    });
   } catch (error) {
     console.error('Resend phone error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
