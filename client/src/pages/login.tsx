@@ -38,6 +38,9 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [showOTPStep, setShowOTPStep] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<string>("");
+  const [emailToVerify, setEmailToVerify] = useState<string>("");
+  const [verificationStep, setVerificationStep] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
   const [showSocialLogin, setShowSocialLogin] = useState(false);
   const { toast } = useToast();
   const { login, loginWithPhone, verifyOTP } = useAuth();
@@ -130,11 +133,21 @@ export default function Login() {
       });
       setLocation("/dashboard");
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message || "An error occurred during login",
-        variant: "destructive",
-      });
+      // Check if this is a verification recovery scenario
+      if (error.requiresVerification && error.recoveryAction === 'verification_sent') {
+        setEmailToVerify(error.email || data.email);
+        setVerificationStep(true);
+        toast({
+          title: "Verification Required",
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message || "An error occurred during login",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -163,6 +176,85 @@ export default function Login() {
       toast({
         title: "Login failed",
         description: error.message || "An error occurred during phone login",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Email verification functions for recovery
+  const verifyEmail = async () => {
+    if (!verificationCode.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailToVerify,
+          code: verificationCode,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast({
+          title: "Email verified!",
+          description: "You can now login.",
+        });
+        setVerificationStep(false);
+        setVerificationCode("");
+        // Auto-attempt login after successful verification
+        const form = emailForm.getValues();
+        if (form.email && form.password) {
+          await onEmailSubmit(form);
+        }
+      } else {
+        toast({
+          title: "Verification failed",
+          description: data.message || "Invalid verification code",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Verification failed. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendVerificationCode = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/resend-email-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailToVerify }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Code sent!",
+          description: "New verification code sent to your email.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to resend code.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -340,7 +432,70 @@ export default function Login() {
           </>
         )}
 
+        {/* Email Verification Step (Recovery UI) */}
+        {verificationStep && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Mail className="h-5 w-5" />
+                <span>Verify Your Email</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                We've sent a verification code to <strong>{emailToVerify}</strong>
+              </p>
+              
+              <div className="space-y-2">
+                <Label htmlFor="verificationCode">Verification Code</Label>
+                <Input
+                  id="verificationCode"
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  data-testid="input-verification-code"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Button 
+                  onClick={verifyEmail} 
+                  disabled={isLoading || !verificationCode.trim()}
+                  className="w-full"
+                  data-testid="button-verify-email"
+                >
+                  {isLoading ? "Verifying..." : "Verify Email"}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={resendVerificationCode}
+                  disabled={isLoading}
+                  className="w-full"
+                  data-testid="button-resend-code"
+                >
+                  {isLoading ? "Sending..." : "Resend Code"}
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  onClick={() => {
+                    setVerificationStep(false);
+                    setVerificationCode("");
+                  }}
+                  className="w-full"
+                  data-testid="button-back-to-login"
+                >
+                  Back to Login
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Login Form */}
+        {!verificationStep && (
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl text-center">Sign In</CardTitle>
@@ -490,6 +645,7 @@ export default function Login() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Back to public site */}
         <div className="text-center">

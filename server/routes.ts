@@ -7,13 +7,14 @@ import authRoutes from "./routes/auth";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const key = process.env.OPENAI_API_KEY;
-if (!key) {
-  console.error("❌ OPENAI_API_KEY is not set. Please configure it in Replit Secrets.");
-  throw new Error("OPENAI_API_KEY is not set. Configure it in Replit Secrets.");
+let openai: OpenAI | null = null;
+
+if (key) {
+  openai = new OpenAI({ apiKey: key });
+  console.log("✅ OpenAI integration ready");
+} else {
+  console.warn("⚠️  OPENAI_API_KEY not set. AI features will be disabled. Configure in Replit Secrets to enable.");
 }
-const openai = new OpenAI({ 
-  apiKey: key
-});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -190,6 +191,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add current user message
       messages.push({ role: "user", content: message });
+
+      if (!openai) {
+        return res.status(503).json({ 
+          message: "AI Assistant unavailable. Please contact admin to configure OpenAI API key." 
+        });
+      }
 
       const response = await openai.chat.completions.create({
         model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user

@@ -205,14 +205,15 @@ router.post('/signup', async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = await storage.getUserByEmail(email);
+    // Check if user already exists (normalize email for consistency)
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existingUser = await storage.getUserByEmail(normalizedEmail);
     if (existingUser) {
       // RECOVERY MECHANISM: If user exists but email not verified, offer to resend verification
       if (!existingUser.isEmailVerified) {
         const newCode = generateCode();
         await storage.updateUser(existingUser.id, { emailVerificationToken: newCode });
-        const emailSent = await sendEmailVerification(email, newCode);
+        const emailSent = await sendEmailVerification(normalizedEmail, newCode);
         
         return res.status(409).json({ 
           success: false, 
@@ -221,7 +222,7 @@ router.post('/signup', async (req, res) => {
             : `Account exists but not verified. Use this code to verify: ${newCode}`,
           requiresVerification: true,
           recoveryAction: 'verification_resent',
-          email: email
+          email: normalizedEmail
         });
       }
       
