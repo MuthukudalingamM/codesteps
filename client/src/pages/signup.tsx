@@ -61,7 +61,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'signup' | 'verify-email' | 'verify-phone'>('signup');
+  const [step, setStep] = useState<'signup' | 'verify-email'>('signup');
   const [userEmail, setUserEmail] = useState('');
   const [userPhone, setUserPhone] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -151,20 +151,12 @@ export default function Signup() {
       });
 
       if (response.ok && responseData.success) {
-        if (userPhone) {
-          setStep('verify-phone');
-          setVerificationCode('');
-          toast({
-            title: "Email verified!",
-            description: "Now please verify your phone number.",
-          });
-        } else {
-          toast({
-            title: "Email verified!",
-            description: "Registration complete! You can now sign in.",
-          });
-          setLocation("/login");
-        }
+        // Skip phone verification and go directly to login after email verification
+        toast({
+          title: "Email verified!",
+          description: "Registration complete! You can now sign in.",
+        });
+        setLocation("/login");
       } else {
         toast({
           title: "Verification failed",
