@@ -236,6 +236,11 @@ router.post('/signup', async (req, res) => {
       await sendPhoneVerification(phone, phoneCode);
     }
 
+    // Debug log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📧 Generated email verification code for ${email}: ${emailCode} (length: ${emailCode.length})`);
+    }
+
     res.json({ 
       success: true, 
       message: emailSent 
@@ -260,13 +265,48 @@ router.post('/verify-email', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and code are required' });
     }
 
-    const user = await storage.getUserByEmail(email);
+    // Normalize email (trim and lowercase)
+    const normalizedEmail = String(email).trim().toLowerCase();
+    
+    const user = await storage.getUserByEmail(normalizedEmail);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (user.emailVerificationToken !== code) {
-      return res.status(400).json({ success: false, message: 'Invalid verification code' });
+    // Check if already verified
+    if (user.isEmailVerified) {
+      return res.status(200).json({ success: true, message: 'Email already verified. You can now login.' });
+    }
+
+    // Normalize codes: remove all non-digits and compare
+    const normalizedInputCode = String(code).replace(/\D/g, '');
+    const normalizedStoredCode = String(user.emailVerificationToken || '').replace(/\D/g, '');
+
+    // Debug log for development (without exposing actual codes in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔍 Code verification: Input length: ${normalizedInputCode.length}, Expected length: ${normalizedStoredCode.length}`);
+    }
+
+    // Validate code length
+    if (normalizedInputCode.length !== 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please enter a valid 6-digit verification code' 
+      });
+    }
+
+    if (!normalizedStoredCode || normalizedStoredCode.length !== 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No valid verification code found. Please request a new code.' 
+      });
+    }
+
+    if (normalizedInputCode !== normalizedStoredCode) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid verification code. Please check the code and try again. If you requested a new code, use the most recent one.' 
+      });
     }
 
     // Update user
@@ -275,7 +315,7 @@ router.post('/verify-email', async (req, res) => {
       emailVerificationToken: null,
     });
 
-    res.json({ success: true, message: 'Email verified successfully' });
+    res.json({ success: true, message: 'Email verified successfully! You can now login.' });
   } catch (error) {
     console.error('Email verification error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -578,7 +618,8 @@ router.get('/debug-codes/:email', async (req, res) => {
   }
   
   try {
-    const user = await storage.getUserByEmail(req.params.email);
+    const normalizedEmail = String(req.params.email).trim().toLowerCase();
+    const user = await storage.getUserByEmail(normalizedEmail);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -588,7 +629,9 @@ router.get('/debug-codes/:email', async (req, res) => {
       emailVerificationToken: user.emailVerificationToken,
       phoneVerificationCode: user.phoneVerificationCode,
       isEmailVerified: user.isEmailVerified,
-      isPhoneVerified: user.isPhoneVerified
+      isPhoneVerified: user.isPhoneVerified,
+      tokenLength: user.emailVerificationToken ? user.emailVerificationToken.length : 0,
+      codeDigitsOnly: user.emailVerificationToken ? String(user.emailVerificationToken).replace(/\D/g, '') : ''
     });
   } catch (error) {
     res.status(500).json({ message: 'Error retrieving codes' });
