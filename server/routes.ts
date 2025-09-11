@@ -6,8 +6,13 @@ import OpenAI from "openai";
 import authRoutes from "./routes/auth";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+const key = process.env.OPENAI_API_KEY;
+if (!key) {
+  console.error("❌ OPENAI_API_KEY is not set. Please configure it in Replit Secrets.");
+  throw new Error("OPENAI_API_KEY is not set. Configure it in Replit Secrets.");
+}
 const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
+  apiKey: key
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
