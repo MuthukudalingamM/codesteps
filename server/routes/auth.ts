@@ -208,7 +208,28 @@ router.post('/signup', async (req, res) => {
     // Check if user already exists
     const existingUser = await storage.getUserByEmail(email);
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email already registered' });
+      // RECOVERY MECHANISM: If user exists but email not verified, offer to resend verification
+      if (!existingUser.isEmailVerified) {
+        const newCode = generateCode();
+        await storage.updateUser(existingUser.id, { emailVerificationToken: newCode });
+        const emailSent = await sendEmailVerification(email, newCode);
+        
+        return res.status(409).json({ 
+          success: false, 
+          message: emailSent 
+            ? 'Account exists but email not verified. We\'ve sent a new verification code to your email. Please verify to complete registration.'
+            : `Account exists but not verified. Use this code to verify: ${newCode}`,
+          requiresVerification: true,
+          recoveryAction: 'verification_resent',
+          email: email
+        });
+      }
+      
+      // User exists and is verified
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email already registered. Please log in instead.' 
+      });
     }
 
     // Hash password
@@ -450,10 +471,21 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user.isEmailVerified) {
+      // RECOVERY MECHANISM: Automatically generate and send new verification code
+      const emailCode = generateCode();
+      await storage.updateUser(user.id, { emailVerificationToken: emailCode });
+      
+      // Try to send verification email
+      const emailSent = await sendEmailVerification(normalizedEmail, emailCode);
+      
       return res.status(401).json({ 
         success: false, 
-        message: 'Please verify your email first',
-        requiresVerification: true
+        message: emailSent 
+          ? 'Email not verified. We\'ve sent a new verification code to your email. Please check your inbox and verify before logging in.'
+          : `Email not verified. Please use this code to verify: ${emailCode}`,
+        requiresVerification: true,
+        recoveryAction: 'verification_sent',
+        email: normalizedEmail
       });
     }
 

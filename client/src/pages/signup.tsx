@@ -122,11 +122,21 @@ export default function Signup() {
           description: responseData.message || "Please check your email for verification code.",
         });
       } else {
-        toast({
-          title: "Signup failed",
-          description: responseData.message || "An error occurred during signup",
-          variant: "destructive",
-        });
+        // Handle recovery scenarios
+        if (responseData.recoveryAction === 'verification_resent') {
+          setUserEmail(data.email);
+          setStep('verify-email');
+          toast({
+            title: "Verification sent!",
+            description: responseData.message,
+          });
+        } else {
+          toast({
+            title: "Signup failed",
+            description: responseData.message || "An error occurred during signup",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error: any) {
       toast({
