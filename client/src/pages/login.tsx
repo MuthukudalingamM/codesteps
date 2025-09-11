@@ -134,7 +134,7 @@ export default function Login() {
       setLocation("/dashboard");
     } catch (error: any) {
       // Check if this is a verification recovery scenario
-      if (error.requiresVerification && error.recoveryAction === 'verification_sent') {
+      if (error.requiresVerification && (error.recoveryAction === 'verification_sent' || error.recoveryAction === 'verification_resent')) {
         setEmailToVerify(error.email || data.email);
         setVerificationStep(true);
         toast({
@@ -194,7 +194,7 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: emailToVerify,
-          code: verificationCode,
+          code: verificationCode.trim().replace(/[\s-]/g, ''),
         }),
       });
 

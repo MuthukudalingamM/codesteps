@@ -287,8 +287,9 @@ router.post('/verify-email', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and code are required' });
     }
 
-    // Normalize email (trim and lowercase)
+    // Normalize email and code - handle copy-paste issues
     const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedCode = String(code).trim().replace(/[\s-]/g, '');
     
     const user = await storage.getUserByEmail(normalizedEmail);
     if (!user) {
