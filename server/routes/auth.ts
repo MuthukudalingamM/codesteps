@@ -432,13 +432,20 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
 
-    const user = await storage.getUserByEmail(email);
+    // Normalize email (trim and lowercase) for consistent lookup
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const user = await storage.getUserByEmail(normalizedEmail);
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      // Debug log in development (without exposing password)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 Password validation failed for user: ${user.email}`);
+      }
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
