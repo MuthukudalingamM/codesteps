@@ -125,7 +125,7 @@ export class MongoStorage {
   async getUser(id: string): Promise<any | undefined> {
     try {
       const user = await User.findById(id);
-      return user ? this.toPlainUser(user as UserDoc) : undefined;
+      return user ? this.toPlainUser(user as any) : undefined;
     } catch (error) {
       console.error('Error getting user:', error);
       return undefined;
@@ -135,7 +135,7 @@ export class MongoStorage {
   async getUserByUsername(username: string): Promise<any | undefined> {
     try {
       const user = await User.findOne({ username });
-      return user ? this.toPlainUser(user as UserDoc) : undefined;
+      return user ? this.toPlainUser(user as any) : undefined;
     } catch (error) {
       console.error('Error getting user by username:', error);
       return undefined;
@@ -145,7 +145,7 @@ export class MongoStorage {
   async getUserByEmail(email: string): Promise<any | undefined> {
     try {
       const user = await User.findOne({ email });
-      return user ? this.toPlainUser(user as UserDoc) : undefined;
+      return user ? this.toPlainUser(user as any) : undefined;
     } catch (error) {
       console.error('Error getting user by email:', error);
       return undefined;
@@ -156,7 +156,7 @@ export class MongoStorage {
     try {
       const newUser = new User(user);
       const savedUser = await newUser.save();
-      return this.toPlainUser(savedUser as UserDoc);
+      return this.toPlainUser(savedUser as any);
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -166,7 +166,7 @@ export class MongoStorage {
   async updateUser(id: string, updates: Partial<any>): Promise<any | undefined> {
     try {
       const user = await User.findByIdAndUpdate(id, updates, { new: true });
-      return user ? this.toPlainUser(user as UserDoc) : undefined;
+      return user ? this.toPlainUser(user as any) : undefined;
     } catch (error) {
       console.error('Error updating user:', error);
       return undefined;

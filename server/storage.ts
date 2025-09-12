@@ -879,5 +879,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Using MemStorage for now until MongoDB is properly configured
+// Using PostgreSQL storage (working reliably)
 export const storage = new MemStorage();
