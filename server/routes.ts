@@ -181,7 +181,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add recent conversation history if available
       if (conversationHistory && conversationHistory.length > 0) {
         // Include last 6 messages for context (3 exchanges)
-        const recentHistory = conversationHistory.slice(-6);
+        // Convert frontend format {type:'user'|'ai', content} to OpenAI format {role:'user'|'assistant', content}
+        const recentHistory = conversationHistory.slice(-6).map((msg: any) => ({
+          role: msg.role || (msg.type === 'ai' ? 'assistant' : 'user'),
+          content: msg.content,
+        }));
         messages.push(...recentHistory);
       }
 
