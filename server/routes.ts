@@ -225,8 +225,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           nextTopics: context?.suggestedTopics || []
         }
       });
-    } catch (error) {
-      console.error("AI chat error:", error);
+    } catch (error: any) {
+      console.error("AI chat error:", error?.message || error, error?.status, error?.code);
       res.status(500).json({ message: "I apologize, but I'm having trouble connecting right now. Please try asking your question again." });
     }
   });
