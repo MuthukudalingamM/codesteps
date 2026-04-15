@@ -879,5 +879,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Using PostgreSQL storage (working reliably)
-export const storage = new MemStorage();
+import { DbStorage } from "./db-storage";
+
+// Using PostgreSQL for persistent storage
+export const storage = new DbStorage();
