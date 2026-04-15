@@ -65,16 +65,14 @@ export default function AiTutorEnhanced() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      return await apiRequest("/api/ai/chat", {
-        method: "POST",
-        body: JSON.stringify({
-          message: content,
-          context: selectedLesson ? {
-            lessonId: selectedLesson,
-            lessonTitle: currentLesson?.title
-          } : undefined
-        }),
+      const res = await apiRequest("POST", "/api/ai/chat", {
+        message: content,
+        context: selectedLesson ? {
+          lessonId: selectedLesson,
+          lessonTitle: currentLesson?.title
+        } : undefined
       });
+      return await res.json();
     },
     onSuccess: (response) => {
       const aiMessage: Message = {
@@ -98,10 +96,8 @@ export default function AiTutorEnhanced() {
 
   const executeCodeMutation = useMutation({
     mutationFn: async (code: string) => {
-      return await apiRequest("/api/code/execute", {
-        method: "POST",
-        body: JSON.stringify({ code }),
-      });
+      const res = await apiRequest("POST", "/api/code/execute", { code });
+      return await res.json();
     },
     onSuccess: (response) => {
       setExecutionResult({

@@ -68,17 +68,14 @@ export default function ErrorSolver() {
 
   const explainMutation = useMutation({
     mutationFn: async (error: any) => {
-      const response = await apiRequest("/api/ai/explain-error", {
-        method: "POST",
-        body: JSON.stringify({
-          error: error.error,
-          code: error.code,
-          context: error.context || "General debugging",
-          userLevel: 'beginner', // Could be dynamic based on user data
-          userId: 'current-user'
-        }),
+      const res = await apiRequest("POST", "/api/ai/explain-error", {
+        error: error.error,
+        code: error.code,
+        context: error.context || "General debugging",
+        userLevel: 'beginner',
+        userId: 'current-user'
       });
-      return response;
+      return await res.json();
     },
     onSuccess: (data) => {
       setExplanation(data);

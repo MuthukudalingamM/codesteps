@@ -80,11 +80,8 @@ export default function AiTutor() {
         userId: 'current-user' // Replace with actual user ID from auth
       };
 
-      const response = await apiRequest("/api/ai/chat", {
-        method: "POST",
-        body: JSON.stringify(contextData),
-      });
-      return response;
+      const res = await apiRequest("POST", "/api/ai/chat", contextData);
+      return await res.json();
     },
     onSuccess: (response) => {
       const aiMessage: Message = {
@@ -114,14 +111,12 @@ export default function AiTutor() {
 
   const executeCodeMutation = useMutation({
     mutationFn: async (code: string) => {
-      return await apiRequest("/api/code/execute", {
-        method: "POST",
-        body: JSON.stringify({
-          code,
-          context: selectedLesson ? currentLesson?.title : 'Practice Code',
-          userId: 'current-user'
-        }),
+      const res = await apiRequest("POST", "/api/code/execute", {
+        code,
+        context: selectedLesson ? currentLesson?.title : 'Practice Code',
+        userId: 'current-user'
       });
+      return await res.json();
     },
     onSuccess: (response) => {
       setExecutionResult({
