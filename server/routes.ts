@@ -5,16 +5,12 @@ import { insertUserSchema, insertCommunityPostSchema, insertAiSessionSchema } fr
 import OpenAI from "openai";
 import authRoutes from "./routes/auth";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const key = process.env.OPENAI_API_KEY;
-let openai: OpenAI | null = null;
-
-if (key) {
-  openai = new OpenAI({ apiKey: key });
-  console.log("✅ OpenAI integration ready");
-} else {
-  console.warn("⚠️  OPENAI_API_KEY not set. AI features will be disabled. Configure in Replit Secrets to enable.");
-}
+// OpenAI via Replit AI Integrations (no personal API key required)
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
+console.log("✅ OpenAI integration ready");
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -192,19 +188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add current user message
       messages.push({ role: "user", content: message });
 
-      if (!openai) {
-        return res.status(503).json({ 
-          message: "AI Assistant unavailable. Please contact admin to configure OpenAI API key." 
-        });
-      }
-
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-5",
         messages,
-        max_tokens: 800,
-        temperature: 0.7,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1,
+        max_completion_tokens: 8192,
       });
 
       const aiResponse = response.choices[0].message.content;
@@ -278,10 +265,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-5",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.3, // Lower temperature for more precise debugging
       });
 
       const aiResponse = JSON.parse(response.choices[0].message.content!);
@@ -357,10 +343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-5",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.4, // Balanced creativity and precision
       });
 
       const aiResponse = JSON.parse(response.choices[0].message.content!);
