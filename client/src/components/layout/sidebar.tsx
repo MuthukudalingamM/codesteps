@@ -10,7 +10,8 @@ import {
   User, 
   Settings, 
   HelpCircle,
-  BookOpen
+  BookOpen,
+  Award
 } from "lucide-react";
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Code Editor", href: "/code-editor", icon: Code },
   { name: "Error Solver", href: "/error-solver", icon: Bug },
   { name: "Challenges", href: "/challenges", icon: Trophy },
+  { name: "Certificates", href: "/certificates", icon: Award },
   { name: "Community", href: "/community", icon: Users },
   { name: "Profile", href: "/profile", icon: User },
   { name: "Settings", href: "/settings", icon: Settings },
