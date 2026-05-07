@@ -226,28 +226,67 @@ export default function Certificates() {
                   <Progress value={pct} className="h-2" />
                 </div>
 
-                {/* Certificate preview (earned) */}
-                {isComplete && (
+                {/* Certificate preview — always visible, blurred if not earned */}
+                <div className="relative rounded-xl overflow-hidden border" style={{ borderColor: level.gradFrom + "40" }}>
+                  {/* Gradient bar */}
+                  <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${level.gradFrom}, ${level.gradTo})` }} />
+
+                  {/* Certificate body */}
                   <div
-                    className="rounded-lg p-4 border text-center relative overflow-hidden"
-                    style={{ background: level.badge, borderColor: level.gradFrom + "40" }}
+                    className="p-4 text-center relative"
+                    style={{
+                      background: level.badge,
+                      filter: isComplete ? "none" : "blur(3px)",
+                      userSelect: isComplete ? "auto" : "none",
+                    }}
                   >
-                    <div className="absolute inset-0 opacity-5" style={{
+                    {/* Watermark pattern */}
+                    <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
                       backgroundImage: `repeating-linear-gradient(45deg, ${level.gradFrom} 0, ${level.gradFrom} 1px, transparent 0, transparent 50%)`,
-                      backgroundSize: "16px 16px",
+                      backgroundSize: "14px 14px",
                     }} />
-                    <Award className="h-8 w-8 mx-auto mb-2" style={{ color: level.accent }} />
-                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: level.accent }}>
+                    {/* Logo */}
+                    <div className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center"
+                      style={{ background: `linear-gradient(135deg, ${level.gradFrom}, ${level.gradTo})` }}>
+                      <span className="text-white font-bold text-xs" style={{ fontFamily: "monospace" }}>&lt;/&gt;</span>
+                    </div>
+                    <p className="text-[9px] font-bold tracking-[0.25em] uppercase mb-1" style={{ color: level.accent }}>
                       Certificate of Completion
                     </p>
-                    <p className="text-sm font-bold mt-1" style={{ color: level.accent }}>
-                      {user?.username || "Student"}
+                    <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: level.accent + "88" }}>
+                      This certifies that
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: level.accent + "99" }}>
-                      {level.label} JavaScript Course · 20 Lessons
+                    <p className="text-base font-bold border-b pb-1 px-4 inline-block" style={{ color: level.accent, borderColor: level.gradFrom }}>
+                      {user?.username || "Your Name"}
                     </p>
+                    <p className="text-[10px] mt-2 mb-2" style={{ color: level.accent + "99" }}>
+                      has completed all <strong>20 lessons</strong> of the
+                    </p>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-2" style={{ background: level.gradFrom + "20" }}>
+                      <Award className="h-3 w-3" style={{ color: level.accent }} />
+                      <span className="text-[10px] font-bold" style={{ color: level.accent }}>{level.label} JavaScript Course</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] pt-2 border-t mt-1" style={{ borderColor: level.gradFrom + "30", color: level.accent + "77" }}>
+                      <span>CodeSteps Platform</span>
+                      <span>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "short" })}</span>
+                      <span>AI Tutor Verified</span>
+                    </div>
                   </div>
-                )}
+
+                  {/* Gradient bar bottom */}
+                  <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${level.gradFrom}, ${level.gradTo})` }} />
+
+                  {/* Lock overlay for incomplete levels */}
+                  {!isComplete && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[1px]">
+                      <div className="p-2.5 rounded-full mb-2" style={{ background: level.badge }}>
+                        <Lock className="h-5 w-5" style={{ color: level.accent }} />
+                      </div>
+                      <p className="text-xs font-semibold text-foreground">Complete all {total} lessons to unlock</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{total - done} lessons remaining</p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Action button */}
                 <Button

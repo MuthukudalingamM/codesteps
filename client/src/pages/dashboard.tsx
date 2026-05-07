@@ -24,6 +24,20 @@ import {
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+
+function loadCompletedCount(userId: string, totalLessons: number): { done: number; total: number; pct: number } {
+  try {
+    const raw = localStorage.getItem(`codesteps_completed_${userId}`);
+    if (raw) {
+      const ids: string[] = JSON.parse(raw);
+      const done = ids.length;
+      const total = totalLessons || 80;
+      return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
+    }
+  } catch {}
+  return { done: 0, total: totalLessons || 80, pct: 0 };
+}
 
 const sampleCode = `// TODO: Implement your function here
 function calculateArea(radius) {
@@ -35,7 +49,9 @@ export default function Dashboard() {
   const [code, setCode] = useState(sampleCode);
   const [, setLocation] = useLocation();
   const [showReminders, setShowReminders] = useState(true);
+  const [lessonStats, setLessonStats] = useState({ done: 0, total: 80, pct: 0 });
   const { toast } = useToast();
+  const { user } = useAuth();
   const {
     reminderSettings,
     updateReminderSettings,
@@ -63,6 +79,13 @@ export default function Dashboard() {
     queryKey: ["/api/lessons"],
   });
 
+  // Recalculate real lesson completion from localStorage whenever user or lessons change
+  useEffect(() => {
+    const userId = user?.id ?? "guest";
+    const totalLessons = Array.isArray(lessons) ? (lessons as any[]).length : 80;
+    setLessonStats(loadCompletedCount(userId, totalLessons));
+  }, [user, lessons]);
+
   const { data: challenges, isLoading: challengesLoading } = useQuery({
     queryKey: ["/api/challenges"],
   });
@@ -83,8 +106,8 @@ export default function Dashboard() {
         />
         <ProgressCard
           title="Lessons Completed"
-          value="24/30"
-          progress={80}
+          value={`${lessonStats.done}/${lessonStats.total}`}
+          progress={lessonStats.pct}
           icon={Book}
           variant="primary"
         />
