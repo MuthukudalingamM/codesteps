@@ -9,11 +9,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   BookOpen, Brain, Trophy, Star, Clock, CheckCircle,
   PlayCircle, Code, Zap, Target, ChevronLeft, ChevronRight,
-  Copy, Check, ArrowLeft, Users, Award, Lock
+  Copy, Check, ArrowLeft, Users, Award, Lock, ExternalLink, Youtube
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { addNotification } from "@/components/notifications";
+import { getLessonResources } from "@/lib/lessonResources";
 
 const LEVELS = {
   beginner: {
@@ -292,6 +293,96 @@ export default function Course() {
             </CardContent>
           </Card>
         )}
+
+        {/* Resources section */}
+        {(() => {
+          const resources = getLessonResources(selectedLesson.id);
+          const linkIcon = (type: string) => {
+            if (type === "wikipedia") return "🌐";
+            if (type === "mdn") return "📘";
+            return "🔗";
+          };
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Youtube className="h-5 w-5 text-red-500" />
+                  Related Resources
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Curated videos and references to deepen your understanding</p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {/* Video cards */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Video Lessons</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {resources.videos.map((v) => (
+                      <a
+                        key={v.videoId}
+                        href={`https://www.youtube.com/watch?v=${v.videoId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex flex-col rounded-xl overflow-hidden border border-border hover:border-red-500/50 hover:shadow-md transition-all duration-200 bg-card"
+                      >
+                        {/* Thumbnail */}
+                        <div className="relative overflow-hidden bg-zinc-900">
+                          <img
+                            src={`https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`}
+                            alt={v.title}
+                            className="w-full aspect-video object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`;
+                            }}
+                          />
+                          {/* Play overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/30">
+                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
+                              <PlayCircle className="h-7 w-7 text-white fill-white" />
+                            </div>
+                          </div>
+                          {/* YouTube badge */}
+                          <div className="absolute top-2 right-2 flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            <Youtube className="h-3 w-3" /> YouTube
+                          </div>
+                        </div>
+                        {/* Info */}
+                        <div className="p-3 flex flex-col gap-0.5">
+                          <p className="text-sm font-medium text-foreground leading-snug line-clamp-2 group-hover:text-red-500 transition-colors">
+                            {v.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{v.channel}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Reference links */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Reference Links</p>
+                  <div className="flex flex-col gap-2">
+                    {resources.links.map((link) => (
+                      <a
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/40 hover:bg-muted/50 transition-all duration-150"
+                      >
+                        <span className="text-lg leading-none">{linkIcon(link.type)}</span>
+                        <span className="flex-1 text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                          {link.title}
+                        </span>
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Certificate banner (shown when whole level is done) */}
         {allDone && (
