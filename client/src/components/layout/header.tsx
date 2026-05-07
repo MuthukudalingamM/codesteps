@@ -1,4 +1,5 @@
-import { Bell, Menu, LogOut, User, Settings } from "lucide-react";
+import { Menu, LogOut, User, Settings } from "lucide-react";
+import NotificationCenter from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -57,17 +58,7 @@ export default function Header() {
               <Sun className="h-5 w-5" />
             )}
           </Button>
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-foreground"
-              data-testid="notifications-toggle"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></span>
-          </div>
+          <NotificationCenter />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-primary hover:bg-primary/90">

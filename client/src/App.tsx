@@ -21,6 +21,7 @@ import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import AuthCallback from "@/pages/auth-callback";
 import Help from "@/pages/help";
+import Certificate from "@/pages/certificate";
 import NotFound from "@/pages/not-found";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -109,6 +110,11 @@ function Router() {
       <Route path="/help" component={() => (
         <ProtectedRoute>
           <Layout><Help /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/certificate/:level" component={() => (
+        <ProtectedRoute>
+          <Certificate />
         </ProtectedRoute>
       )} />
       <Route path="/login" component={Login} />
