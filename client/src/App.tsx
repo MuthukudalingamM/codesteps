@@ -20,6 +20,7 @@ import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import AuthCallback from "@/pages/auth-callback";
+import Help from "@/pages/help";
 import NotFound from "@/pages/not-found";
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -103,6 +104,11 @@ function Router() {
       <Route path="/settings" component={() => (
         <ProtectedRoute>
           <Layout><Settings /></Layout>
+        </ProtectedRoute>
+      )} />
+      <Route path="/help" component={() => (
+        <ProtectedRoute>
+          <Layout><Help /></Layout>
         </ProtectedRoute>
       )} />
       <Route path="/login" component={Login} />
